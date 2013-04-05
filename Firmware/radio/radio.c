@@ -328,6 +328,7 @@ radio_transmit_simple(__data uint8_t length, __xdata uint8_t * __pdata buf, __pd
 	// start TX
 	register_write(EZRADIOPRO_OPERATING_AND_FUNCTION_CONTROL_1, EZRADIOPRO_TXON | EZRADIOPRO_XTON);
 
+	P2 |=  0x01;
 	// wait for transmit complete or timeout
 	tstart = timer2_tick();
 	while ((uint16_t)(timer2_tick() - tstart) < timeout_ticks) {
@@ -372,6 +373,7 @@ radio_transmit_simple(__data uint8_t length, __xdata uint8_t * __pdata buf, __pd
 			if (errors.tx_errors != 0xFFFF) {
 				errors.tx_errors++;
 			}
+			P2 &= ~0x01;
 			return false;
 		}
 
@@ -391,12 +393,15 @@ radio_transmit_simple(__data uint8_t length, __xdata uint8_t * __pdata buf, __pd
 				if (errors.tx_errors != 0xFFFF) {
 					errors.tx_errors++;
 				}
+				P2 &= ~0x01;
 				return false;
 			}
+			P2 &= ~0x01;
 			return true;			
 		}
 
 	}
+	P2 &= ~0x01;
 
 	// transmit timeout ... clear the FIFO
 	debug("TX timeout %u ts=%u tn=%u len=%u\n",
@@ -471,7 +476,7 @@ radio_transmit_golay(uint8_t length, __xdata uint8_t * __pdata buf, __pdata uint
 // @return	    true if packet sent successfully
 //
 bool
-radio_transmit(uint8_t length, __xdata uint8_t * __pdata buf, __pdata uint16_t timeout_ticks)
+radio_transmit(uint8_t length, __xdata uint8_t * __pdata buf, uint16_t destination, __pdata uint16_t timeout_ticks)
 {
 	bool ret;
 	EX0_SAVE_DISABLE;
@@ -481,6 +486,8 @@ radio_transmit(uint8_t length, __xdata uint8_t * __pdata buf, __pdata uint16_t t
 #endif
 	
 	if (!feature_golay) {
+    register_write(EZRADIOPRO_TRANSMIT_HEADER_1, destination >> 8);
+		register_write(EZRADIOPRO_TRANSMIT_HEADER_0, destination & 0xFF);
 		ret = radio_transmit_simple(length, buf, timeout_ticks);
 	} else {
 		ret = radio_transmit_golay(length, buf, timeout_ticks);
@@ -936,6 +943,21 @@ radio_set_network_id(uint16_t id)
 	}
 }
 
+// setup a 16 bit node ID
+//
+void
+radio_set_node_id(uint16_t id)
+{
+	__pdata uint8_t nodeid[2];
+	nodeid[0] = id&0xFF;
+	nodeid[1] = id>>8;
+	if (!feature_golay) {
+		// when not using golay encoding we use the hardware
+		// headers for node ID
+		register_write(EZRADIOPRO_CHECK_HEADER_1, id >> 8);
+		register_write(EZRADIOPRO_CHECK_HEADER_0, id & 0xFF);
+	}
+}
 
 /// write to a radio register
 ///
@@ -1159,6 +1181,7 @@ INTERRUPT(Receiver_ISR, INTERRUPT_INT0)
 {
 	__data uint8_t status, status2;
 
+	P2 |=  0x40;
 	status2 = register_read(EZRADIOPRO_INTERRUPT_STATUS_2);
 	status  = register_read(EZRADIOPRO_INTERRUPT_STATUS_1);
 
@@ -1205,6 +1228,7 @@ INTERRUPT(Receiver_ISR, INTERRUPT_INT0)
 		// go into tune mode
 		register_write(EZRADIOPRO_OPERATING_AND_FUNCTION_CONTROL_1, EZRADIOPRO_PLLON);
 	}
+	P2 &= ~0x40;
 	return;
 
 rxfail:
@@ -1212,5 +1236,6 @@ rxfail:
 		errors.rx_errors++;
 	}
 	radio_receiver_on();
+	P2 &= ~0x40;
 }
 

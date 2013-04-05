@@ -28,7 +28,7 @@ See the user documentation above for a list of current firmware features
  - [SDCC](http://sdcc.sourceforge.net/), version 3.1.0 or later.
  - [EC2Tools](http://github.com/tridge/ec2)
  - [Mono](http://www.mono-project.com/) to build and run the GUI firmware updater.
- - Python to run the command-line firmware updater.
+ - Python to run the command-line firmware updater, with packages pexpect and argparse
 
 Note that at this time, building on Windows systems is not supported.  If someone wants to contribute and maintain the necessary pieces that would be wonderful.
 

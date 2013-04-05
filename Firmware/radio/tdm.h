@@ -35,6 +35,13 @@
 #ifndef _TDM_H_
 #define _TDM_H_
 
+#include <stdbool.h>
+
+// Hard coded for the inital testing, need to figure out how this could be changed on the fly later down the track
+// Maybe a new command seprate from the AT? Without entering +++ mode? more thought needed
+#define BASE_NODEID 0
+//#define USE_TICK_YIELD 1
+
 /// initialise tdm subsystem
 ///
 extern void tdm_init(void);
@@ -42,6 +49,17 @@ extern void tdm_init(void);
 // tdm main loop
 ///
 extern void tdm_serial_loop(void);
+
+#if USE_TICK_YIELD
+extern uint8_t tdm_update_yeild(uint8_t set_yield, uint8_t packet_length);
+#endif
+
+// setup a 16 bit node ID
+//
+extern void tdm_set_node_id(uint16_t id);
+
+// setup a 16 bit node count
+extern void tdm_set_node_count(uint16_t count);
 
 /// report tdm timings
 ///

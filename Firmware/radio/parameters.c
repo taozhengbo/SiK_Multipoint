@@ -44,27 +44,29 @@
 #include "tdm.h"
 #include <flash_layout.h>
 
-/// In-ROM parameter info table.
+/// In-ROM parameter info table. Changed by ATS commands
 ///
 __code const struct parameter_info {
 	const char	*name;
 	param_t		default_value;
 } parameter_info[PARAM_MAX] = {
-	{"FORMAT", 		PARAM_FORMAT_CURRENT},
-	{"SERIAL_SPEED",	57}, // match APM default of 57600
-	{"AIR_SPEED",		64}, // relies on MAVLink flow control
-	{"NETID",		25},
-	{"TXPOWER",		0},
-	{"ECC",			1},
-	{"MAVLINK",		1},
-	{"OPPRESEND",		1},
-	{"MIN_FREQ",		0},
-	{"MAX_FREQ",		0},
-	{"NUM_CHANNELS",	0},
-	{"DUTY_CYCLE",		100},
-	{"LBT_RSSI",		0},
-	{"MANCHESTER",		0},
-	{"RTSCTS",		0}
+/*00*/  {"FORMAT",  PARAM_FORMAT_CURRENT},
+/*01*/  {"SERIAL_SPEED",  57}, // match APM default of 57600
+/*02*/  {"AIR_SPEED",  64}, // relies on MAVLink flow control
+/*03*/  {"NETID",  25},
+/*04*/  {"NODEID",  2}, // The base node is '1' lets make new nodes 2
+/*05*/  {"NODECOUNT",  3}, // The amount of nodes in the network, this may could become auto discovery later.
+/*06*/  {"TXPOWER",  0},
+/*07*/  {"ECC",  1},
+/*08*/  {"MAVLINK",  1},
+/*09*/  {"OPPRESEND",  1},
+/*10*/  {"MIN_FREQ",  0},
+/*11*/  {"MAX_FREQ",  0},
+/*12*/  {"NUM_CHANNELS",  0},
+/*13*/  {"DUTY_CYCLE",  100},
+/*14*/  {"LBT_RSSI",  0},
+/*15*/  {"MANCHESTER",  0},
+/*16*/  {"RTSCTS",  0}
 };
 
 /// In-RAM parameter store.
@@ -102,6 +104,16 @@ param_check(__pdata enum ParamID id, __data uint32_t val)
 		// all values are OK
 		return true;
 
+  case PARAM_NODEID:
+      if(val == 0xFFFF) // Can not assign broadcast to a id
+        return false;
+      return true;
+
+  case PARAM_NODECOUNT:
+    if(val < 2)
+      return false;
+    return true;
+      
 	case PARAM_TXPOWER:
 		if (val > BOARD_MAXTXPOWER)
 			return false;
@@ -167,6 +179,15 @@ param_set(__data enum ParamID param, __pdata param_t value)
 		value = feature_rtscts?1:0;
 		break;
 
+	case PARAM_NODEID:
+		radio_set_node_id(value);
+		tdm_set_node_id(value);
+		break;
+			
+	case PARAM_NODECOUNT:
+		tdm_set_node_count(value);
+		break;
+			
 	default:
 		break;
 	}

@@ -121,11 +121,11 @@ at_input(register uint8_t c)
 //			-> wait_for_idle if any char
 //
 
-#define	ATP_WAIT_FOR_IDLE	0
-#define ATP_WAIT_FOR_PLUS1	1
-#define ATP_WAIT_FOR_PLUS2	2
-#define ATP_WAIT_FOR_PLUS3	3
-#define ATP_WAIT_FOR_ENABLE	4
+#define ATP_WAIT_FOR_IDLE   0
+#define ATP_WAIT_FOR_PLUS1  1
+#define ATP_WAIT_FOR_PLUS2  2
+#define ATP_WAIT_FOR_PLUS3  3
+#define ATP_WAIT_FOR_ENABLE 4
 
 #define ATP_COUNT_1S		100	// 100 ticks of the 100Hz timer
 

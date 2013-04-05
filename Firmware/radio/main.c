@@ -383,7 +383,14 @@ radio_init(void)
 
 	// setup network ID
 	radio_set_network_id(param_get(PARAM_NETID));
-
+  
+	// setup node ID
+	radio_set_node_id(param_get(PARAM_NODEID));
+	tdm_set_node_id(param_get(PARAM_NODEID));
+	
+	// setup node count
+	tdm_set_node_count(param_get(PARAM_NODECOUNT));
+	
 	// setup transmit power
 	radio_set_transmit_power(txpower);
 	

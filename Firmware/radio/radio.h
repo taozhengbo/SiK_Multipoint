@@ -157,12 +157,13 @@ extern bool radio_preamble_detected(void);
 ///
 /// @param length		Packet length to be transmitted; assumes
 ///				the data is already present in the FIFO.
+/// @param destination The node the packet is transmitted to
 /// @param timeout_ticks	The number of ticks to wait before assiming
 ///				that transmission has failed.
 ///
 /// @return			true if packet sent successfully
 ///
-extern bool radio_transmit(uint8_t length, __xdata uint8_t * __pdata buf, __pdata uint16_t timeout_ticks);
+extern bool radio_transmit(uint8_t length, __xdata uint8_t * __pdata buf, uint16_t destination, __pdata uint16_t timeout_ticks);
 
 /// switch the radio to receive mode
 ///
@@ -220,6 +221,15 @@ extern bool radio_configure(__pdata uint8_t air_rate);
 ///				on reception
 ///
 extern void radio_set_network_id(uint16_t id);
+
+/// configure the radio node ID
+///
+/// The node ID is programmed as header check bytes, so that packets not for
+/// this node can be rejected at the hardware level.
+///
+/// @param id			The node ID to be filter on reception
+///
+extern void radio_set_node_id(uint16_t id);
 
 /// fetch the signal strength recorded for the most recent preamble
 ///

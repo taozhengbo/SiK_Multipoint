@@ -258,7 +258,7 @@ class uploader(object):
 
 # Parse commandline arguments
 parser = argparse.ArgumentParser(description="Firmware uploader for the SiK radio system.")
-parser.add_argument('--port', action="store", help="port to upload to")
+parser.add_argument('--port', '--serial', action="store", help="port to upload to")
 parser.add_argument('--resetparams', action="store_true", help="reset all parameters to defaults")
 parser.add_argument("--baudrate", type=int, default=57600, help='baud rate')
 parser.add_argument('firmware', action="store", help="Firmware file to be uploaded")
