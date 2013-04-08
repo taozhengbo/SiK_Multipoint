@@ -236,7 +236,7 @@ sync_tx_windows(__pdata uint8_t packet_length)
 #if USE_TICK_YIELD
 	// if the other end has sent a zero length packet and we are
 	// in their transmit window then they are yielding some ticks to us.
-	tdm_update_yeild(1, packet_length);
+	tdm_update_yeild(true, packet_length);
 #endif
 
 //	// if we are not in transmit state then we can't be yielded
@@ -607,7 +607,7 @@ tdm_serial_loop(void)
 		// or in the other radios transmit window if we have
 		// bonus ticks
 #if USE_TICK_YIELD
-		if (tdm_update_yeild(0, 0)) { // TODO!!
+		if (tdm_update_yeild(false, 0)) { // TODO!!
 			continue;
 		}
 #else
@@ -615,11 +615,6 @@ tdm_serial_loop(void)
 			continue;
 		}		
 #endif
-
-		if (transmit_yield != 0) {
-			// we've give up our window
-			continue;
-		}
 
 		if (transmit_wait != 0) {
 			// we're waiting for a preamble to turn into a packet
@@ -681,8 +676,6 @@ tdm_serial_loop(void)
 		}
 
 		trailer.bonus = (tdm_state == TDM_RECEIVE);
-		if(trailer.bonus)
-			printf("bonus time ohhh yea!!\n");
 		trailer.resend = packet_is_resend();
 
 		if (tdm_state == TDM_TRANSMIT &&
@@ -697,7 +690,10 @@ tdm_serial_loop(void)
 			// mark a stats packet with a zero window
 			trailer.window = 0;
 			trailer.resend = 0;
-		} else {
+		} else if (tdm_state != TDM_TRANSMIT && len == 0) {
+			continue; // If we have nothing contructive to send be quiet..
+		}
+		else {
 			// calculate the control word as the number of
 			// 16usec ticks that will be left in this
 			// tdm state after this packet is transmitted
@@ -720,6 +716,7 @@ tdm_serial_loop(void)
 			// our window, but doesn't change the
 			// start of the next window
 			transmit_yield = 1;
+			bonus_transmit = 0;
 		}
 		else {
 			transmit_yield = 0;
@@ -765,31 +762,56 @@ uint8_t
 tdm_update_yeild(uint8_t set_yield, uint8_t packet_length)
 {
 	static int32_t bonus_transmit_yeild;
-	
+
 	if (tdm_state != TDM_TRANSMIT) {
 		bonus_transmit_yeild = trailer.nodeid - nodeId - 1;
 		if (bonus_transmit_yeild < 0) {
-			bonus_transmit_yeild = nodeCount - bonus_transmit_yeild; // make it positive and add offset
+			bonus_transmit_yeild += nodeCount; // make it positive and add offset
+			printf("%d\n",bonus_transmit_yeild);
 		}
-		
-		if(set_yield) {
-			if (!(bonus_transmit_yeild < MAX_YELD_SLOTS && (bonus_transmit & 1<<bonus_transmit_yeild))) {
-				// we cannot transmit now
+		if(!set_yield) {
+			if (bonus_transmit_yeild < MAX_YELD_SLOTS-1 && (bonus_transmit & 1<<bonus_transmit_yeild)) {
+				// we can transmit now
+				bonus_transmit &= ~(1<<bonus_transmit_yeild); // reset for next time
+				return 0;
+			}
+			else
+			{
+				bonus_transmit = 0; // we have been denied a slot, reset the rest to stop cross talk
 				return 1;
 			}
-			return 0;
 		}
 		else {
-			if(bonus_transmit_yeild < MAX_YELD_SLOTS) {
-				if (tdm_state == TDM_RECEIVE && packet_length==0) {
+			if(bonus_transmit_yeild < MAX_YELD_SLOTS-1) {
+				if (tdm_state == TDM_RECEIVE && packet_length==0 && (bonus_transmit_yeild == 0 || (bonus_transmit & 1<<bonus_transmit_yeild-1))) {
 					bonus_transmit |= 1<<bonus_transmit_yeild;
+//					printf("%d\'n",bonus_transmit);
+				}
+				else {
+					bonus_transmit &= ~(1<<bonus_transmit_yeild);
+				}
+			}
+			else if (nodeId - bonus_transmit_yeild == 1){ // Did the node before us transmit?
+				if (tdm_state == TDM_RECEIVE && packet_length==0 && (bonus_transmit_yeild == 0 || (bonus_transmit & 1<<bonus_transmit_yeild-1))) {
+					bonus_transmit |= 1<<bonus_transmit_yeild;
+					//					printf("%d\'n",bonus_transmit);
 				}
 				else {
 					bonus_transmit &= ~(1<<bonus_transmit_yeild);
 				}
 			}
 		}
-	}	
+	}
+	else {
+		bonus_transmit = 0; // always reset the bonuses when it's out transmitter's turn
+		if (transmit_yield != 0) {
+			transmit_yield = 0; // reset the yield
+//			printf("Yeild\n");
+			// we've give up our window
+			return 1;
+		}
+		return 0;
+	}
 	return 1;	
 }
 #endif
