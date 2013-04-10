@@ -54,19 +54,19 @@ __code const struct parameter_info {
 /*01*/  {"SERIAL_SPEED",  57}, // match APM default of 57600
 /*02*/  {"AIR_SPEED",  64}, // relies on MAVLink flow control
 /*03*/  {"NETID",  25},
-/*04*/  {"NODEID",  2}, // The base node is '1' lets make new nodes 2
-/*05*/  {"NODECOUNT",  3}, // The amount of nodes in the network, this may could become auto discovery later.
-/*06*/  {"TXPOWER",  0},
-/*07*/  {"ECC",  1},
-/*08*/  {"MAVLINK",  1},
-/*09*/  {"OPPRESEND",  1},
-/*10*/  {"MIN_FREQ",  0},
-/*11*/  {"MAX_FREQ",  0},
-/*12*/  {"NUM_CHANNELS",  0},
-/*13*/  {"DUTY_CYCLE",  100},
-/*14*/  {"LBT_RSSI",  0},
-/*15*/  {"MANCHESTER",  0},
-/*16*/  {"RTSCTS",  0}
+/*04*/  {"TXPOWER",  0},
+/*05*/  {"ECC",  1},
+/*06*/  {"MAVLINK",  1},
+/*07*/  {"OPPRESEND",  1},
+/*08*/  {"MIN_FREQ",  0},
+/*09*/  {"MAX_FREQ",  0},
+/*10*/  {"NUM_CHANNELS",  0},
+/*11*/  {"DUTY_CYCLE",  100},
+/*12*/  {"LBT_RSSI",  0},
+/*13*/  {"MANCHESTER",  0},
+/*14*/  {"RTSCTS",  0},
+/*15*/  {"NODEID",  2}, // The base node is '1' lets make new nodes 2
+/*16*/  {"NODECOUNT",  3}, // The amount of nodes in the network, this may could become auto discovery later.
 };
 
 /// In-RAM parameter store.

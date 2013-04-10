@@ -50,8 +50,6 @@ enum ParamID {
         PARAM_SERIAL_SPEED,   // BAUD_RATE_* constant
         PARAM_AIR_SPEED,      // over the air baud rate
         PARAM_NETID,          // network ID
-        PARAM_NODEID,         // node ID
-        PARAM_NODECOUNT,      // number of sequential nodes in the network
         PARAM_TXPOWER,        // transmit power (dBm)
         PARAM_ECC,            // ECC using golay encoding
         PARAM_MAVLINK,        // MAVLink framing
@@ -63,6 +61,8 @@ enum ParamID {
         PARAM_LBT_RSSI,       // listen before talk threshold
         PARAM_MANCHESTER,     // enable manchester encoding
         PARAM_RTSCTS,         // enable hardware flow control
+		PARAM_NODEID,         // node ID
+		PARAM_NODECOUNT,      // number of sequential nodes in the network
         PARAM_MAX             // must be last
 };
 
