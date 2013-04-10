@@ -105,7 +105,8 @@ param_check(__pdata enum ParamID id, __data uint32_t val)
 		return true;
 
   case PARAM_NODEID:
-      if(val == 0xFFFF) // Can not assign broadcast to a id
+	  // Can not assign id above 32,766 upper most bit is sync, 0x7FFF is broadcast
+      if(val > 0x7FFE)
         return false;
       return true;
 
