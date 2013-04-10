@@ -223,47 +223,8 @@ class uploader(object):
 		if self.atbaudrate != 115200:
 			self.port.setBaudrate(115200)
 		return False
-	
-	def setNodeID(self, nodeIdent):
-		'''Set the modem Id after cose update'''
-		import fdpexpect, time
-		
-		if nodeIdent >= 0x7FFF: # can't be larger than this no
-			return False
-		
-		ser = fdpexpect.fdspawn(self.port.fileno(), logfile=sys.stdout)
-		if self.atbaudrate != 115200:
-			self.port.setBaudrate(self.atbaudrate)
-		
-		ser.send('\r\n')
-		time.sleep(1.0)
-		ser.send('+++')
-		try:
-			ser.expect('OK', timeout=1.1)
-		except fdpexpect.TIMEOUT:
-			# may already be in AT mode
-			pass
-		
-		for i in range(5):
-			ser.send("\r\nATS4=%d\r\n"%nodeIdent)
-			try:
-				ser.expect('OK', timeout=2)
-				ser.send('\r\n')
-				ser.send('\r\nATS4?\r\n')
-				ser.expect("%d"%nodeIdent, timeout=2)
-				time.sleep(1)
-				ser.send('ATO\r\n')
-				time.sleep(1)
-				if self.atbaudrate != 115200:
-					self.port.setBaudrate(115200)
-				return True
-			except fdpexpect.TIMEOUT:
-				continue
-		ser.send('ATO\r\n')
-		if self.atbaudrate != 115200:
-			self.port.setBaudrate(115200)
-		return False
-	
+
+
 	# verify whether the bootloader is present and responding
 	def check(self):
 		for i in range(3):
@@ -293,13 +254,13 @@ class uploader(object):
 		self.__verify(fw)
 		print("done.")
 		self.__reboot()
+	
 
 # Parse commandline arguments
 parser = argparse.ArgumentParser(description="Firmware uploader for the SiK radio system.")
-parser.add_argument('--port', '--serial', action="store", help="port to upload to")
+parser.add_argument('--port', action="store", help="port to upload to")
 parser.add_argument('--resetparams', action="store_true", help="reset all parameters to defaults")
 parser.add_argument("--baudrate", type=int, default=57600, help='baud rate')
-parser.add_argument("--nodeid", type=int, default=0x8000, help='set node id after upload')
 parser.add_argument('firmware', action="store", help="Firmware file to be uploaded")
 args = parser.parse_args()
 
@@ -320,4 +281,3 @@ for port in glob.glob(args.port):
 	id, freq = up.identify()
 	print("board %x  freq %x" % (id, freq))
 	up.upload(fw,args.resetparams)
-	up.setNodeID(args.nodeid)
