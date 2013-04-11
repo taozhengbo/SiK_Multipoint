@@ -53,6 +53,12 @@ extern uint8_t fhop_transmit_channel(void);
 //
 extern uint8_t fhop_receive_channel(void);
 
+/// tell the TDM code what channel to sync on
+///
+/// @return		The channel that we should be syncing on.
+//
+extern uint8_t fhop_sync_channel(void);
+
 /// called when the transmit window flips
 ///
 extern void fhop_window_change(void);

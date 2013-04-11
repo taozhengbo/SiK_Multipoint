@@ -99,6 +99,13 @@ fhop_receive_channel(void)
 	return channel_map[receive_channel];
 }
 
+// tell the TDM code what channel to transmit on
+uint8_t 
+fhop_sync_channel(void)
+{
+	return channel_map[0]; // Fixed sync channel
+}
+
 // called when the transmit windows changes owner
 void 
 fhop_window_change(void)
