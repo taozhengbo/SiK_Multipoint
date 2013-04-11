@@ -1,5 +1,6 @@
 // -*- Mode: C; c-basic-offset: 8; -*-
 //
+// Copyright (c) 2013 Luke Hovington, All Rights Reserved
 // Copyright (c) 2012 Andrew Tridgell, All Rights Reserved
 // Copyright (c) 2011 Michael Smith, All Rights Reserved
 //
@@ -68,7 +69,7 @@ __pdata static uint16_t silence_period;
 /// whether we can transmit in the other radios transmit window
 /// due to the other radio yielding to us
 static uint16_t bonus_transmit;
-#define MAX_YELD_SLOTS 16 // The max number of slots we can record in a 16bit number 1<<16 = 65536
+#define MAX_YELD_SLOTS 16 // The max number of slots/bits we can record in a 16bit number
 
 /// whether we have yielded our window to the other radio
 static __bit transmit_yield;
@@ -213,25 +214,26 @@ sync_tx_windows(__pdata uint8_t packet_length)
 	__data enum tdm_state old_state = tdm_state;
 	__pdata uint16_t old_remaining = tdm_state_remaining;
 
-	if (trailer.bonus) {
-		// the other radio is using our transmit window
-		// via yielded ticks
-		/* TODO Implement yielded ticks */
-		if(nodetransmitSeq != trailer.nodeid) nodetransmitSeq = trailer.nodeid;
-		
-		if (tdm_state == TDM_TRANSMIT && (nodetransmitSeq++ % nodeCount) != nodeId) {
-			tdm_state = TDM_TRANSMIT;
-		}
-		else {
-			tdm_state = TDM_RECEIVE;
-		}
-		tdm_state_remaining = trailer.window;
-	} else {
+	// If the sync bit is set, lets update our sequence
+	// We need to add one as the base will be ahead of us
+	if(trailer.nodeid & 0x8000)
+		nodetransmitSeq = (trailer.nodeid & 0x7FFF) + 1;
+	
+//	if (trailer.bonus) {
+//		// the other radio is using our transmit window via yielded ticks
+//		if (tdm_state == TDM_TRANSMIT && (nodetransmitSeq % nodeCount) != nodeId) {
+//			tdm_state = TDM_TRANSMIT;
+//		}
+//		else {
+//			tdm_state = TDM_RECEIVE;
+//		}
+//		tdm_state_remaining = trailer.window;
+//	} else {
 		// we are in the other radios transmit window, our
 		// receive window
 		tdm_state = TDM_RECEIVE;
 		tdm_state_remaining = trailer.window;
-	}
+//	}
 
 #if USE_TICK_YIELD
 	// if the other end has sent a zero length packet and we are
@@ -276,13 +278,28 @@ tdm_state_update(__pdata uint16_t tdelta)
 	// have we passed the next transition point?
 	while (tdelta >= tdm_state_remaining) {
 		// advance the tdm state machine
-		/* TODO */
-		tdm_state = (tdm_state+1) % 2;
+		//tdm_state = tdm_state++ % 2;
 
-		if (tdm_state == TDM_TRANSMIT && (nodetransmitSeq++ % nodeCount) != nodeId) {
+		if ((nodetransmitSeq < 0x8000 || nodeId == 0) && (nodetransmitSeq++ % nodeCount) == nodeId) {
+			tdm_state = TDM_TRANSMIT;
+			nodetransmitSeq %= nodeCount;
+		}
+		else {
 			tdm_state = TDM_RECEIVE; // If there are other nodes yet to transmit lets hear them first
 		}
 
+		if(nodetransmitSeq % nodeCount == 2) {
+			P2 |= 0x40;
+			P2 &= ~0x01;
+		}
+		else if (nodetransmitSeq % nodeCount == 1) {
+			P2 &= ~0x40;
+			P2 |= 0x01;
+		}
+		else {
+			P2 &= ~0x40;
+			P2 &= ~0x01;
+		}
 		// work out the time remaining in this state
 		tdelta -= tdm_state_remaining;
 
@@ -323,9 +340,12 @@ tdm_state_update(__pdata uint16_t tdelta)
 void
 tdm_change_phase(void)
 {
-	tdm_state = (tdm_state+2) % 2;
+	//tdm_state = tdm_state++ % 2;
 	
-	if (tdm_state == TDM_TRANSMIT && (nodetransmitSeq++ % nodeCount) != nodeId) {
+	if ((nodetransmitSeq < 0x8000 || nodeId == 0) && (nodetransmitSeq++ % nodeCount) == nodeId) {
+		tdm_state = TDM_TRANSMIT;
+	}
+	else {
 		tdm_state = TDM_RECEIVE; // If there are other nodes yet to transmit lets hear them first
 	}
 }
@@ -367,7 +387,7 @@ static void
 link_update(void)
 {
 	static uint8_t unlock_count, temperature_count;
-	if (received_packet) {
+	if (nodeId == 0 || (received_packet && nodetransmitSeq < 0x8000)) {
 		unlock_count = 0;
 		received_packet = false;
 	} else {
@@ -378,6 +398,7 @@ link_update(void)
 	} else {
 		LED_RADIO = blink_state;
 		blink_state = !blink_state;
+		nodetransmitSeq = 0xFFFF;
 	}
 	if (unlock_count > 40) {
 		// if we have been unlocked for 20 seconds
@@ -569,7 +590,9 @@ tdm_serial_loop(void)
 			}
 			
 			// Sync the timing sequence with the incoming packet
-			if(nodetransmitSeq != trailer.nodeid && trailer.nodeid != 0xFFFF) nodetransmitSeq = trailer.nodeid;
+			// We need to add one as the base will be ahead of us
+			if(trailer.nodeid & 0x8000)
+				nodetransmitSeq = (trailer.nodeid & 0x7FFF) + 1;
 			continue;
 		}
 		
@@ -700,6 +723,8 @@ tdm_serial_loop(void)
 			trailer.window = (uint16_t)(tdm_state_remaining - flight_time_estimate(len+sizeof(trailer)));
 		}
 		trailer.nodeid = nodeId;
+		if (tdm_state == TDM_TRANSMIT && nodeId == 0)
+			trailer.nodeid |= 0x8000; // if in transmit and base add the sync bit
 		
 		// set right transmit channel
 		radio_set_channel(fhop_transmit_channel());
@@ -979,10 +1004,10 @@ tdm_init(void)
 	}
 
 	// set the silence period to two times the packet latency
-	silence_period = 1.5*packet_latency;
+	silence_period = 2*packet_latency;
 
 	// set the transmit window to allow for 2 full sized packets
-	window_width = 1.5*(packet_latency+(max_data_packet_length*(uint32_t)ticks_per_byte));
+	window_width = 2*(packet_latency+(max_data_packet_length*(uint32_t)ticks_per_byte));
 
 	// if LBT is enabled, we need at least 3*5ms of window width
 	if (lbt_rssi != 0) {
@@ -1017,7 +1042,8 @@ tdm_init(void)
 	}
 	packet_set_max_xmit(i);
 
-	trailer.nodeid = 0xFFFF; // Init with a bad value
+	trailer.nodeid  = 0x7FFF; // Init with a broadcast value
+	nodetransmitSeq = 0xFFFF;
 	// crc_test();
 
 	// tdm_test_timing();
