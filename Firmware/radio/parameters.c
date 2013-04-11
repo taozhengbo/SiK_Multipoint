@@ -75,11 +75,7 @@ __code const struct parameter_info {
 /// hold all the parameters when we're rewriting the scratchpad
 /// page anyway.
 ///
-union param_private {
-	param_t		val;
-	uint8_t		bytes[4];
-};
-__xdata union param_private	parameter_values[PARAM_MAX];
+__xdata param_t	parameter_values[PARAM_MAX];
 
 static bool
 param_check(__pdata enum ParamID id, __data uint32_t val)
@@ -193,7 +189,7 @@ param_set(__data enum ParamID param, __pdata param_t value)
 		break;
 	}
 
-	parameter_values[param].val = value;
+	parameter_values[param] = value;
 
 	return true;
 }
@@ -203,40 +199,31 @@ param_get(__data enum ParamID param)
 {
 	if (param >= PARAM_MAX)
 		return 0;
-	return parameter_values[param].val;
+	return parameter_values[param];
 }
 
 bool
 param_load(void)
 __critical {
-	__pdata uint8_t		d;
 	__pdata uint8_t		i;
 	__pdata uint8_t		sum;
-	__pdata uint8_t         count;
 
 	// start with defaults
-	for (i = 0; i < sizeof(parameter_values); i++) {
-		parameter_values[i].val = parameter_info[i].default_value;
+	for (i = 0; i < PARAM_MAX; i++) {
+		parameter_values[i] = parameter_info[i].default_value;
 	}
 
 	// initialise checksum
 	sum = 0;
-	count = flash_read_scratch(0);
-	if (count > sizeof(parameter_values) ||
-	    count < 12*sizeof(param_t)) {
-		return false;
-	}
 
 	// loop reading the parameters array
-	for (i = 0; i < count; i ++) {
-		d = flash_read_scratch(i+1);
-		parameter_values[0].bytes[i] = d;
-		sum ^= d;
+	for (i = 0; i < PARAM_MAX * sizeof(param_t); i ++) {
+		((uint8_t *)parameter_values)[i] = flash_read_scratch(i+1);
+		sum ^= ((uint8_t *)parameter_values)[i];
 	}
 
 	// verify checksum
-	d = flash_read_scratch(i+1);
-	if (sum != d)
+	if (sum != flash_read_scratch(i+1))
 		return false;
 
 	// decide whether we read a supported version of the structure
@@ -245,9 +232,9 @@ __critical {
 		return false;
 	}
 
-	for (i = 0; i < sizeof(parameter_values); i++) {
-		if (!param_check(i, parameter_values[i].val)) {
-			parameter_values[i].val = parameter_info[i].default_value;
+	for (i = 0; i < PARAM_MAX; i++) {
+		if (!param_check(i, parameter_values[i])) {
+			parameter_values[i] = parameter_info[i].default_value;
 		}
 	}
 
@@ -257,12 +244,11 @@ __critical {
 void
 param_save(void)
 __critical {
-	__pdata uint8_t		d;
 	__pdata uint8_t		i;
 	__pdata uint8_t		sum;
 
 	// tag parameters with the current format
-	parameter_values[PARAM_FORMAT].val = PARAM_FORMAT_CURRENT;
+	parameter_values[PARAM_FORMAT] = PARAM_FORMAT_CURRENT;
 
 	// erase the scratch space
 	flash_erase_scratch();
@@ -272,10 +258,9 @@ __critical {
 	flash_write_scratch(0, sizeof(parameter_values));
 
 	// save parameters to the scratch page
-	for (i = 0; i < sizeof(parameter_values); i++) {
-		d = parameter_values[0].bytes[i];	// byte we are going to write
-		sum ^= d;
-		flash_write_scratch(i+1, d);
+	for (i = 0; i < PARAM_MAX * sizeof(param_t); i++) {
+		sum ^= ((uint8_t *)parameter_values)[i];
+		flash_write_scratch(i+1, ((uint8_t *)parameter_values)[i]);
 	}
 
 	// write checksum
@@ -289,7 +274,7 @@ param_default(void)
 
 	// set all parameters to their default values
 	for (i = 0; i < PARAM_MAX; i++) {
-		parameter_values[i].val = parameter_info[i].default_value;
+		parameter_values[i] = parameter_info[i].default_value;
 	}
 }
 
