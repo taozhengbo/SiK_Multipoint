@@ -207,12 +207,7 @@ hardware_init(void)
 	timer_init();
 
 	// UART - set the configured speed
-	if (serial_device_valid_speed(param_get(PARAM_SERIAL_SPEED))) {
-		serial_init(param_get(PARAM_SERIAL_SPEED));
-	}
-	else {
-		serial_init(57);
-	}
+	serial_init(param_get(PARAM_SERIAL_SPEED));
 
 	// set all interrupts to the same priority level
 	IP = 0;

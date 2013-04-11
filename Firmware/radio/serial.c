@@ -465,6 +465,9 @@ void serial_device_set_speed(register uint8_t speed)
 	uint8_t i;
 	uint8_t num_rates = ARRAY_LENGTH(serial_rates);
 
+	if(!serial_device_valid_speed(speed))
+		speed = 57;
+	
 	for (i = 0; i < num_rates; i++) {
 		if (speed == serial_rates[i].rate) {
 			break;
