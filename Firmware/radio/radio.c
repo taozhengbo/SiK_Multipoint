@@ -608,6 +608,7 @@ radio_set_channel_spacing(__pdata uint32_t value)
 void
 radio_set_channel(uint8_t channel)
 {
+//	channel = 2;
 	if (channel != settings.current_channel) {
 		settings.current_channel = channel;
 		register_write(EZRADIOPRO_FREQUENCY_HOPPING_CHANNEL_SELECT, channel);

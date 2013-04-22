@@ -59,6 +59,11 @@ extern uint8_t fhop_receive_channel(void);
 //
 extern uint8_t fhop_sync_channel(void);
 
+
+// Get and Set the transmit channel, needed to get nodes in sync
+extern uint8_t get_transmit_channel(void);
+extern void set_transmit_channel(uint8_t channel);
+
 /// called when the transmit window flips
 ///
 extern void fhop_window_change(void);
