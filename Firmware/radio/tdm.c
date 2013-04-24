@@ -71,7 +71,7 @@ __pdata static uint16_t silence_period;
 /// due to the other radio yielding to us
 static uint16_t bonus_transmit;
 #define MAX_YIELD_SLOTS 16 // The max number of slots/bits we can record in a 16bit number
-enum tdm_yield { YIELD_SET=true, YIELD_GET=false, YIELD_TRANSMIT=true, YIELD_RECIVE=false, YIELD_NO_DATA=false };
+enum tdm_yield { YIELD_SET=true, YIELD_GET=false, YIELD_TRANSMIT=true, YIELD_RECEIVE=false, YIELD_NO_DATA=false };
 
 /// whether we have yielded our window to the other radio
 static __bit transmit_yield;
@@ -281,10 +281,9 @@ tdm_update_yield(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 		return YIELD_TRANSMIT;
 	}
 	else if (tdm_state == TDM_SYNC) {
-		return YIELD_RECIVE;
+		return YIELD_RECEIVE;
 	}
 	
-	// else if (nodetransmitSeq < 0x8000 && (nodetransmitSeq-1 % nodeCount) == nodeCount-1) {
 	if (tdm_state != TDM_TRANSMIT) {
 		// Find a offset to our current node so we can record the yield for this node.
 		bonus_transmit_yield = nodetransmitSeq - nodeId - 1;
@@ -293,22 +292,9 @@ tdm_update_yield(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 			bonus_transmit_yield += (nodeCount-1); // make it positive and remove 1 for the sync channel
 		}
 		
-//		if(bonus_transmit_yield < MAX_YIELD_SLOTS) {
-////			printf("BTY_%d\n",bonus_transmit_yield);
-//			bonus_transmit_yield = 1<<bonus_transmit_yield;
-//		}
-//		else {
-////			printf("RST");//:%d\n",bonus_transmit_yield);
-//			if(!set_yield) {
-////				printf( "RESET - BTY:%d MS:%u\n",bonus_transmit_yield, MAX_YIELD_SLOTS);
-////					   SEQ:%u NID:%d NC:%d\n",bonus_transmit_yield, MAX_YIELD_SLOTS, nodetransmitSeq, nodeId, nodeCount);
-//			}
-//			bonus_transmit_yield = -1;
-//		}
-		
 		if(!set_yield) {
 //			printf( "BTY:%d RID:%u ID:%d NC:%d\n",bonus_transmit_yield, nodetransmitSeq, nodeId, nodeCount);
-			if (bonus_transmit_yield < MAX_YIELD_SLOTS && (bonus_transmit & (1<<bonus_transmit_yield))) {
+			if (transmit_yield == 0 && bonus_transmit_yield < MAX_YIELD_SLOTS && (bonus_transmit & (1<<bonus_transmit_yield))) {
 //				printf("BTY: %d - %d\n",bonus_transmit_yield, MAX_YIELD_SLOTS);
 //				printf("MYS: %lu - %u - %d\n", MAX_YIELD_SLOTS, MAX_YIELD_SLOTS, MAX_YIELD_SLOTS);
 				// we can transmit now
@@ -317,8 +303,8 @@ tdm_update_yield(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 			}
 			else
 			{
-				bonus_transmit = 0; // we have been denied a slot, reset the rest to stop cross talk
-				return YIELD_RECIVE;
+				bonus_transmit = 0; // we have been denied a slot, clear buffer to stop cross talk
+				return YIELD_RECEIVE;
 			}
 		}
 		else {
@@ -347,10 +333,13 @@ tdm_update_yield(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 		//bonus_transmit = 0;
 		if (transmit_yield != 0) {
 			transmit_yield = 0; // reset the yield
-			//			printf("Yield\n");
-			tdm_state = TDM_RECEIVE;
+			
+			// Lets wait to see if anyone else needs to transmit
+			transmit_wait = packet_latency*2;
+			bonus_transmit = 0;
+
 			// we've give up our window last transmitt..
-//			return YIELD_RECIVE;
+			return YIELD_RECEIVE;
 		}
 		return YIELD_TRANSMIT;
 	}
@@ -555,14 +544,19 @@ tdm_serial_loop(void)
 			// any more
 			transmit_wait = 0;
 
-			if (len < 2) {
+			if (len < sizeof(trailer)) {
 				// not a valid packet. We always send
-				// two control bytes at the end of every packet
+				// trailer at the end of every packet
 				continue;
 			}
 
+			// If we have recived a packet there must be another node taking our slot..
+			if(tdm_state == TDM_TRANSMIT){
+				tdm_state = TDM_RECEIVE;
+			}
+			
 			// extract control bytes from end of packet
-			memcpy(&trailer, &pbuf[len-sizeof(trailer)], sizeof(trailer));
+			memcpy(&trailer, pbuf+len-sizeof(trailer), sizeof(trailer));
 			len -= sizeof(trailer);
 
 			if (trailer.window == 0 && len != 0) {
@@ -574,14 +568,6 @@ tdm_serial_loop(void)
 				// don't count control packets in the stats
 				statistics.receive_count--;
 			} else if (trailer.window != 0) {
-				// If the sync bit is set, lets update our sequence
-				if(trailer.nodeid & 0x8000)
-				{
-					nodetransmitSeq = 0;
-					set_transmit_channel(trailer.nodeid & 0x7FFF);
-					received_sync = true;
-				}
-				
 				tdm_state_remaining = trailer.window;
 				
 #if USE_TICK_YIELD
@@ -649,7 +635,7 @@ tdm_serial_loop(void)
 		// or in the other radios transmit window if we have
 		// bonus ticks
 #if USE_TICK_YIELD
-		if (tdm_update_yield(YIELD_GET, YIELD_NO_DATA) == YIELD_RECIVE) {
+		if (tdm_update_yield(YIELD_GET, YIELD_NO_DATA) == YIELD_RECEIVE) {
 			continue;
 		}
 #else
@@ -765,15 +751,17 @@ tdm_serial_loop(void)
 			LED_ACTIVITY = LED_ON;
 		}
 
-		if (len == 0) {
-			// sending a zero byte packet gives up
-			// our window, but doesn't change the
-			// start of the next window
-			transmit_yield = 1;
-			bonus_transmit = 0;
-		}
-		else {
-			transmit_yield = 0;
+		if(tdm_state != TDM_SYNC) {
+			if (len == 0) {
+				// sending a zero byte packet gives up
+				// our window, but doesn't change the
+				// start of the next window
+				transmit_yield = 1;
+				bonus_transmit = 0;
+			}
+			else {
+				transmit_yield = 0;
+			}
 		}
 
 		// after sending a packet leave a bit of time before
