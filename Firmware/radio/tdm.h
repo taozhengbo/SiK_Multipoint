@@ -50,16 +50,12 @@ extern void tdm_init(void);
 ///
 extern void tdm_serial_loop(void);
 
-#if USE_TICK_YIELD
-extern uint8_t tdm_update_yeild(uint8_t set_yield, uint8_t packet_length);
-#endif
-
 // setup a 16 bit node ID
 //
-extern void tdm_set_node_id(uint16_t id);
+extern void tdm_set_node_id(__pdata uint16_t id);
 
 // setup a 16 bit node count
-extern void tdm_set_node_count(uint16_t count);
+extern void tdm_set_node_count(__pdata uint16_t count);
 
 /// report tdm timings
 ///
