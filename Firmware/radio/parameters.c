@@ -42,6 +42,7 @@
 
 #include "radio.h"
 #include "tdm.h"
+#include "crc.h"
 #include <flash_layout.h>
 
 /// In-ROM parameter info table. Changed by ATS commands
@@ -206,24 +207,21 @@ bool
 param_load(void)
 __critical {
 	__pdata uint8_t		i;
-	__pdata uint8_t		sum;
+	__pdata uint16_t	sum;
 
 	// start with defaults
 	for (i = 0; i < PARAM_MAX; i++) {
 		parameter_values[i] = parameter_info[i].default_value;
 	}
 
-	// initialise checksum
-	sum = 0;
-
 	// loop reading the parameters array
-	for (i = 0; i < PARAM_MAX * sizeof(param_t); i ++) {
+	for (i = 0; i < sizeof(parameter_values); i ++) {
 		((uint8_t *)parameter_values)[i] = flash_read_scratch(i+1);
-		sum ^= ((uint8_t *)parameter_values)[i];
 	}
-
+	
 	// verify checksum
-	if (sum != flash_read_scratch(i+1))
+	sum = flash_read_scratch(i+1)<<8 | flash_read_scratch(i+2);
+	if (sum != crc16(sizeof(parameter_values), ((__xdata uint8_t *)parameter_values)))
 		return false;
 
 	// decide whether we read a supported version of the structure
@@ -245,26 +243,25 @@ void
 param_save(void)
 __critical {
 	__pdata uint8_t		i;
-	__pdata uint8_t		sum;
+	__pdata uint16_t	sum;
 
 	// tag parameters with the current format
 	parameter_values[PARAM_FORMAT] = PARAM_FORMAT_CURRENT;
 
 	// erase the scratch space
 	flash_erase_scratch();
-
-	// initialise checksum
-	sum = 0;
 	flash_write_scratch(0, sizeof(parameter_values));
 
 	// save parameters to the scratch page
-	for (i = 0; i < PARAM_MAX * sizeof(param_t); i++) {
-		sum ^= ((uint8_t *)parameter_values)[i];
+	for (i = 0; i < sizeof(parameter_values); i++) {
 		flash_write_scratch(i+1, ((uint8_t *)parameter_values)[i]);
 	}
 
+	sum = crc16(sizeof(parameter_values), ((__xdata uint8_t *)parameter_values));
+	
 	// write checksum
-	flash_write_scratch(i+1, sum);
+	flash_write_scratch(i+1, sum>>8);
+	flash_write_scratch(i+2, sum&0xFF);
 }
 
 void
