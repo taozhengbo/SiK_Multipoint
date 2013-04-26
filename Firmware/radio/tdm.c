@@ -67,11 +67,15 @@ __pdata static uint8_t max_data_packet_length;
 /// two zero length packets
 __pdata static uint16_t silence_period;
 
+
+#if USE_TICK_YIELD
 /// whether we can transmit in the other radios transmit window
 /// due to the other radio yielding to us
-static uint16_t bonus_transmit;
-#define MAX_YIELD_SLOTS 16 // The max number of slots/bits we can record in a 16bit number
+__pdata static uint16_t bonus_transmit;
+__pdata static  int32_t bonus_transmit_yield;
+static __bit received_packet;
 enum tdm_yield { YIELD_SET=true, YIELD_GET=false, YIELD_TRANSMIT=true, YIELD_RECEIVE=false, YIELD_NO_DATA=false };
+#endif // USE_TICK_YIELD
 
 /// whether we have yielded our window to the other radio
 static __bit transmit_yield;
@@ -80,11 +84,9 @@ static __bit transmit_yield;
 // when the 16 bit timer2_tick() value wraps we check if we have received a
 // packet since the last wrap (ie. every second)
 // If we have the green radio LED is held on.
-// Otherwise it blinks every 1 seconds. The received_packet flag
-// is set for any received packet, whether it contains user data or
-// not.
+// Otherwise it blinks every 1 seconds. The received_sync flag
+// is set for any received sync packet
 static __bit blink_state;
-static __bit received_packet;
 static __bit received_sync;
 
 /// the latency in 16usec timer2 ticks for sending a zero length packet
@@ -228,12 +230,12 @@ tdm_state_update(__pdata uint16_t tdelta)
 			tdm_state = TDM_RECEIVE; // If there are other nodes yet to transmit lets hear them first
 		}
 
-		if(tdm_state == TDM_SYNC) {//nodetransmitSeq-1 % nodeCount == nodeCount-1) {
-			P0 |= 0x02;
-		}
-		else {
-			P0 &= ~0x02;
-		}
+//		if(tdm_state == TDM_SYNC) {
+//			P0 |= 0x02;
+//		}
+//		else {
+//			P0 &= ~0x02;
+//		}
 		
 		// work out the time remaining in this state
 		tdelta -= tdm_state_remaining;
@@ -272,31 +274,37 @@ tdm_state_update(__pdata uint16_t tdelta)
 /// update if another is yielding or has yielded (if we want to transmit)
 ///
 static uint8_t
-tdm_update_yield(__pdata uint8_t set_yield, __pdata uint8_t no_data)
-{
-	static __pdata int32_t bonus_transmit_yield;
-	
+tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
+{	
+//	received_packet = false;
 	// Sort out the sync period first..
-	if(!set_yield && tdm_state == TDM_SYNC && nodeId == 0) {
-		return YIELD_TRANSMIT;
-	}
-	else if (tdm_state == TDM_SYNC) {
-		return YIELD_RECEIVE;
+	if( tdm_state == TDM_SYNC) {
+		if (nodeId == 0) {
+			return YIELD_TRANSMIT;
+		}
+		else {
+			return YIELD_RECEIVE;
+		}
 	}
 	
+//	if(received_packet) {
+//		P0 |= 0x02;
+//	}
+//	else {
+//		P0 &= ~0x02;
+//	}
+	
+//	printf( "BTY:%d RID:%u ID:%d NC:%d\n",bonus_transmit_yield, nodetransmitSeq, nodeId, nodeCount);
 	if (tdm_state != TDM_TRANSMIT) {
+		
 		// Find a offset to our current node so we can record the yield for this node.
-		bonus_transmit_yield = nodetransmitSeq - nodeId - 1;
+		bonus_transmit_yield = (signed)(nodetransmitSeq % nodeCount) - (signed)nodeId - 1;
 		if (bonus_transmit_yield < 0) {
-			printf("Pos...\n");
 			bonus_transmit_yield += (nodeCount-1); // make it positive and remove 1 for the sync channel
 		}
 		
 		if(!set_yield) {
-//			printf( "BTY:%d RID:%u ID:%d NC:%d\n",bonus_transmit_yield, nodetransmitSeq, nodeId, nodeCount);
-			if (transmit_yield == 0 && bonus_transmit_yield < MAX_YIELD_SLOTS && (bonus_transmit & (1<<bonus_transmit_yield))) {
-//				printf("BTY: %d - %d\n",bonus_transmit_yield, MAX_YIELD_SLOTS);
-//				printf("MYS: %lu - %u - %d\n", MAX_YIELD_SLOTS, MAX_YIELD_SLOTS, MAX_YIELD_SLOTS);
+			if ((bonus_transmit_yield < (unsigned)(sizeof(bonus_transmit)*8)) && (bonus_transmit & (1<<bonus_transmit_yield))) {
 				// we can transmit now
 				bonus_transmit &= ~(1<<bonus_transmit_yield); // reset for next time
 				return YIELD_TRANSMIT;
@@ -308,10 +316,9 @@ tdm_update_yield(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 			}
 		}
 		else {
-			if(bonus_transmit_yield < MAX_YIELD_SLOTS) {
+			if(bonus_transmit_yield < (unsigned)(sizeof(bonus_transmit)*8)) {
 				if (tdm_state == TDM_RECEIVE && no_data) {
 					bonus_transmit |= (1<<bonus_transmit_yield);
-					//					printf("%d\'n",bonus_transmit);
 				}
 				else {
 					bonus_transmit &= ~(1<<bonus_transmit_yield);
@@ -329,14 +336,14 @@ tdm_update_yield(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 		}
 	}
 	else { // We must be in Transmit Mode
-		// always reset the bonuses when it's out transmitter's turn
-		//bonus_transmit = 0;
 		if (transmit_yield != 0) {
 			transmit_yield = 0; // reset the yield
 			
+			// always reset the bonuses when it's out transmitter's turn
+			bonus_transmit = 0;
+			
 			// Lets wait to see if anyone else needs to transmit
 			transmit_wait = packet_latency*2;
-			bonus_transmit = 0;
 
 			// we've give up our window last transmitt..
 			return YIELD_RECEIVE;
@@ -400,9 +407,8 @@ static void
 link_update(void)
 {
 	static uint8_t unlock_count, temperature_count;
-	if (nodeId == 0 || (received_packet && received_sync)) {
+	if (nodeId == 0 || received_sync) {
 		unlock_count = 0;
-		received_packet = false;
 		received_sync = false;
 		fhop_set_locked(true);
 	} else {
@@ -532,10 +538,12 @@ tdm_serial_loop(void)
 
 		// see if we have received a packet
 		if (radio_receive_packet(&len, pbuf)) {
-
+#if USE_TICK_YIELD
 			// update the activity indication
-			received_packet = true;
-			
+			if (tdm_state == TDM_TRANSMIT) {
+				received_packet = true;
+			}
+#endif
 			// update filtered RSSI value and packet stats
 			statistics.average_rssi = (radio_last_rssi() + 7*(uint16_t)statistics.average_rssi)/8;
 			statistics.receive_count++;
@@ -573,7 +581,7 @@ tdm_serial_loop(void)
 #if USE_TICK_YIELD
 				// if the other end has sent a zero length packet and we are
 				// in their transmit window then they are yielding some ticks to us.
-				tdm_update_yield(YIELD_SET, len==0);
+				tdm_yield_update(YIELD_SET, len==0);
 #endif
 				last_t = tnow;
 
@@ -635,7 +643,7 @@ tdm_serial_loop(void)
 		// or in the other radios transmit window if we have
 		// bonus ticks
 #if USE_TICK_YIELD
-		if (tdm_update_yield(YIELD_GET, YIELD_NO_DATA) == YIELD_RECEIVE) {
+		if (tdm_yield_update(YIELD_GET, YIELD_NO_DATA) == YIELD_RECEIVE) {
 			continue;
 		}
 #else
@@ -652,8 +660,7 @@ tdm_serial_loop(void)
 			continue;
 		}
 
-		if (!received_packet &&
-		    radio_preamble_detected() ||
+		if (radio_preamble_detected() ||
 		    radio_receive_in_progress()) {
 			// a preamble has been detected. Don't
 			// transmit for a while
