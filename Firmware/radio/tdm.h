@@ -40,7 +40,7 @@
 // Hard coded for the inital testing, need to figure out how this could be changed on the fly later down the track
 // Maybe a new command seprate from the AT? Without entering +++ mode? more thought needed
 #define BASE_NODEID 0
-//#define USE_TICK_YIELD 1
+#define USE_TICK_YIELD 1
 
 /// initialise tdm subsystem
 ///
