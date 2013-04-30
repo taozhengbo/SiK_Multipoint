@@ -185,7 +185,6 @@ param_set(__data enum ParamID param, __pdata param_t value)
 
 		case PARAM_NODEID:
 			radio_set_node_id(value);
-			tdm_set_node_id(value);
 			break;
 				
 		case PARAM_NODECOUNT:

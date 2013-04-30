@@ -85,7 +85,7 @@ static void radio_init(void);
 
 /// statistics for radio and serial errors
 __pdata struct error_counts errors;
-__pdata struct statistics statistics, remote_statistics;
+struct statistics statistics[MAX_NODE_RSSI_STATS], remote_statistics[MAX_NODE_RSSI_STATS];
 
 /// optional features
 bool feature_golay;
@@ -386,7 +386,6 @@ radio_init(void)
   
 	// setup node ID
 	radio_set_node_id(param_get(PARAM_NODEID));
-	tdm_set_node_id(param_get(PARAM_NODEID));
 	
 	// setup node count
 	tdm_set_node_count(param_get(PARAM_NODECOUNT));

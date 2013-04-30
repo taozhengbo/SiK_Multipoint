@@ -136,8 +136,10 @@ __pdata static uint16_t lbt_rand;
 /// counter wraps, zeroed when display has happened
 __pdata uint8_t test_display;
 
-/// set when we should send a statistics packet on the next round
-static __bit send_statistics;
+// Statisics packet recive count
+__pdata uint16_t statistics_receive_count;
+// set to 0 when we should send statistics packets
+__pdata uint16_t statistics_transmit_stats;
 
 /// set when we should send a MAVLink report pkt
 extern bool seen_mavlink;
@@ -155,37 +157,40 @@ __pdata struct tdm_trailer trailer;
 static bool send_at_command;
 static __pdata char remote_at_cmd[AT_CMD_MAXLEN + 1];
 
-// local nodeId
-__pdata static uint16_t nodeId;
-
 // local nodeCount
 __pdata static uint16_t nodeCount;
 
 /// display RSSI output
-///
 void
 tdm_show_rssi(void)
 {
-	printf("L/R RSSI: %u/%u  L/R noise: %u/%u pkts: %u ",
-	       (unsigned)statistics.average_rssi,
-	       (unsigned)remote_statistics.average_rssi,
-	       (unsigned)statistics.average_noise,
-	       (unsigned)remote_statistics.average_noise,
-	       (unsigned)statistics.receive_count);
-	printf(" txe=%u rxe=%u stx=%u srx=%u ecc=%u/%u temp=%d dco=%u\n",
-	       (unsigned)errors.tx_errors,
-	       (unsigned)errors.rx_errors,
-	       (unsigned)errors.serial_tx_overflow,
-	       (unsigned)errors.serial_rx_overflow,
-	       (unsigned)errors.corrected_errors,
-	       (unsigned)errors.corrected_packets,
-	       (int)radio_temperature(),
-	       (unsigned)duty_cycle_offset);
-	statistics.receive_count = 0;
+	__pdata uint8_t i;
+	for(i=0; i<(nodeCount-1) && i<MAX_NODE_RSSI_STATS; i++)
+	{
+		if (i != nodeId) {
+			printf("[%u] L/R RSSI: %u/%u  L/R noise: %u/%u\n",
+				   (unsigned)i,
+				   (unsigned)statistics[i].average_rssi,
+				   (unsigned)remote_statistics[i].average_rssi,
+				   (unsigned)statistics[nodeId].average_noise,
+				   (unsigned)remote_statistics[i].average_noise);
+		}
+	}
+	printf("[%u] pkts: %u txe=%u rxe=%u stx=%u srx=%u ecc=%u/%u temp=%d dco=%u\n",
+		   (unsigned)nodeId,
+		   (unsigned)statistics_receive_count,
+		   (unsigned)errors.tx_errors,
+		   (unsigned)errors.rx_errors,
+		   (unsigned)errors.serial_tx_overflow,
+		   (unsigned)errors.serial_rx_overflow,
+		   (unsigned)errors.corrected_errors,
+		   (unsigned)errors.corrected_packets,
+		   (int)radio_temperature(),
+		   (unsigned)duty_cycle_offset);
+	statistics_receive_count = 0;
 }
 
 /// display test output
-///
 static void
 display_test_output(void)
 {
@@ -403,17 +408,17 @@ link_update(void)
 	}
 
 	if (unlock_count != 0) {
-		statistics.average_rssi = (radio_last_rssi() + 3*(uint16_t)statistics.average_rssi)/4;
-
+//		statistics[x].average_rssi = (radio_last_rssi() + 3*(uint16_t)statistics[x].average_rssi)/4;
+//
 		// reset statistics when unlocked
-		statistics.receive_count = 0;
+		statistics_receive_count = 0;
 	}
 	if (unlock_count > 5) {
-		memset(&remote_statistics, 0, sizeof(remote_statistics));
+		memset(remote_statistics, 0, sizeof(remote_statistics));
 	}
 
 	test_display = at_testmode;
-	send_statistics = 1;
+	statistics_transmit_stats = 0;
 
 	temperature_count++;
 	if (temperature_count == 4) {
@@ -515,11 +520,7 @@ tdm_serial_loop(void)
 		tnow = timer2_tick();
 
 		// see if we have received a packet
-		if (radio_receive_packet(&len, pbuf)) {
-			// update filtered RSSI value and packet stats
-			statistics.average_rssi = (radio_last_rssi() + 7*(uint16_t)statistics.average_rssi)/8;
-			statistics.receive_count++;
-			
+		if (radio_receive_packet(&len, pbuf)) {			
 			// we're not waiting for a preamble
 			// any more
 			transmit_wait = 0;
@@ -527,6 +528,8 @@ tdm_serial_loop(void)
 			if (len < sizeof(trailer)) {
 				// not a valid packet. We always send
 				// trailer at the end of every packet
+				
+				printf("Invalid length.. %u\n",len);
 				continue;
 			}
 
@@ -539,17 +542,36 @@ tdm_serial_loop(void)
 #endif // USE_TICK_YIELD
 			
 			// extract control bytes from end of packet
-			memcpy(&trailer, pbuf+len-sizeof(trailer), sizeof(trailer));
+			memcpy(&trailer, pbuf +len-sizeof(trailer), sizeof(trailer));
 			len -= sizeof(trailer);
 
+			// Sync the timing sequence with the incoming packet
+			// trailer.nodeid in a sync byte is the next channel to receive/transmit on
+			if(trailer.nodeid & 0x8000){
+				nodeTransmitSeq = 0;
+				set_transmit_channel(trailer.nodeid & 0x7FFF);
+				received_sync = true;
+				continue;
+			}
+			
+			// update filtered RSSI value and packet stats
+			if(trailer.nodeid < MAX_NODE_RSSI_STATS) {
+				statistics[trailer.nodeid].average_rssi = (radio_last_rssi() + 7*(uint16_t)statistics[trailer.nodeid].average_rssi)/8;
+			}
+			statistics_receive_count++;
+			
 			if (trailer.window == 0 && len != 0) {
 				// its a control packet
-				if (len == sizeof(struct statistics)) {
-					memcpy(&remote_statistics, pbuf, len);
+				if (len == (sizeof(struct statistics)+2) && trailer.nodeid < MAX_NODE_RSSI_STATS) {
+					// Get the last two bytes from the packet and compare them against our nodeId
+					if(((uint16_t*)(pbuf+len-2))[0] == nodeId)
+					{
+						memcpy(remote_statistics +trailer.nodeid, pbuf, len);
+					}
 				}
 
 				// don't count control packets in the stats
-				statistics.receive_count--;
+				statistics_receive_count--;
 			} else if (trailer.window != 0) {
 				tdm_state_remaining = trailer.window;
 				
@@ -573,13 +595,6 @@ tdm_serial_loop(void)
 					LED_ACTIVITY = LED_OFF;
 					//printf("]\n");
 				}
-			}
-			
-			// Sync the timing sequence with the incoming packet
-			if(trailer.nodeid & 0x8000){
-				nodeTransmitSeq = 0;
-				set_transmit_channel(trailer.nodeid & 0x7FFF);
-				received_sync = true;
 			}
 			continue;
 		}
@@ -646,7 +661,7 @@ tdm_serial_loop(void)
 		// sample the background noise when it is out turn to
 		// transmit, but we are not transmitting,
 		// averaged over around 4 samples
-		statistics.average_noise = (radio_current_rssi() + 3*(uint16_t)statistics.average_noise)/4;
+		statistics[nodeId].average_noise = (radio_current_rssi() + 3*(uint16_t)statistics[nodeId].average_noise)/4;
 
 		if (duty_cycle_wait) {
 			// we're waiting for our duty cycle to drop
@@ -697,19 +712,35 @@ tdm_serial_loop(void)
 		trailer.bonus = (tdm_state == TDM_RECEIVE);
 		trailer.resend = packet_is_resend();
 
-		if (((tdm_state == TDM_TRANSMIT && len == 0 && send_statistics) 
-			|| (tdm_state == TDM_SYNC && nodeId == BASE_NODEID) ) && max_xmit >= sizeof(statistics)) {
-			// send a statistics packet
-			if(tdm_state != TDM_SYNC) {
-				send_statistics = 0;
+		// send a statistics packet
+		if (tdm_state == TDM_TRANSMIT && len == 0 && statistics_transmit_stats < (nodeCount-1)
+			&& max_xmit >= sizeof(statistics) && nodeId < MAX_NODE_RSSI_STATS) {
+			
+			if(statistics_transmit_stats == nodeId) {
+				statistics_transmit_stats++;
 			}
-			len = sizeof(statistics);
-			memcpy(pbuf, &statistics, len);
-		
+			
+			len = sizeof(struct statistics);
+			// If we have valid data to send
+			if(statistics_transmit_stats < (nodeCount-1)) {
+				statistics[statistics_transmit_stats].average_noise = statistics[nodeId].average_noise;
+				memcpy(pbuf, statistics+statistics_transmit_stats, len);
+				memcpy(pbuf+len, &statistics_transmit_stats, 2);
+				statistics_transmit_stats++;
+			}
+			else { // If we are the last node lets repeat the first packet
+				statistics_transmit_stats = 0;
+				statistics[statistics_transmit_stats].average_noise = statistics[nodeId].average_noise;
+				memcpy(pbuf, statistics+statistics_transmit_stats, len);
+				memcpy(pbuf+len, &statistics_transmit_stats, 2);
+				statistics_transmit_stats = nodeCount;
+			}
+			len += 2;
+
 			// mark a stats packet with a zero window
 			trailer.window = 0;
 			trailer.resend = 0;
-		} else if (tdm_state != TDM_TRANSMIT && len == 0) {
+		} else if (tdm_state != TDM_TRANSMIT && len == 0 && !(tdm_state == TDM_SYNC && nodeId == BASE_NODEID)) {
 			continue; // If we have nothing contructive to send be quiet..
 		}
 		else {
@@ -782,14 +813,6 @@ tdm_serial_loop(void)
 			LED_ACTIVITY = LED_OFF;
 		}
 	}
-}
-
-// setup a 16 bit node ID
-//
-void
-tdm_set_node_id(__pdata uint16_t id)
-{
-	nodeId = id;
 }
 
 // setup a 16 bit node count
@@ -978,8 +1001,7 @@ tdm_init(void)
 		window_width = 0x1FFF;
 	}
 	
-	// the window width cannot be more than 0.4 seconds to meet US
-	// regulations
+	// the window width cannot be more than 0.4 seconds to meet US regulations
 	if (window_width >= REGULATORY_MAX_WINDOW) {
 		window_width = REGULATORY_MAX_WINDOW;
 	}
@@ -1003,8 +1025,12 @@ tdm_init(void)
 	}
 	packet_set_max_xmit(i);
 
-	trailer.nodeid  = 0x7FFF; // Init with a broadcast value
+	// Clear Values..
+	trailer.nodeid  = 0xFFFF;
 	nodeTransmitSeq = 0xFFFF;
+	memset(remote_statistics, 0, sizeof(remote_statistics));
+	memset(statistics, 0, sizeof(statistics));
+	
 	// crc_test();
 
 	// tdm_test_timing();

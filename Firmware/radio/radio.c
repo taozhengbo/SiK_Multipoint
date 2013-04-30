@@ -40,7 +40,7 @@ __pdata uint8_t receive_packet_length;
 __pdata uint8_t partial_packet_length;
 __pdata uint8_t last_rssi;
 __pdata uint8_t netid[2];
-__pdata uint8_t nodeid[2];
+__pdata uint16_t nodeId;
 
 static volatile __bit packet_received;
 static volatile __bit preamble_detected;
@@ -102,7 +102,7 @@ radio_receive_packet(uint8_t *length, __xdata uint8_t * __pdata buf)
 
 //	destination  = register_read(EZRADIOPRO_RECEIVED_HEADER_3) << 8;
 //	destination |= register_read(EZRADIOPRO_RECEIVED_HEADER_2);
-//	printf("DP-%u:%u\n\n", destination, ((uint16_t *)nodeid)[0]);
+//	printf("DP-%u:%u\n\n", destination, nodeId);
 
 	
 	if (!feature_golay) {
@@ -959,10 +959,9 @@ radio_set_network_id(uint16_t id)
 void
 radio_set_node_id(uint16_t id)
 {
-	nodeid[0] = id&0xFF;
-	nodeid[1] = id>>8;
-	register_write(EZRADIOPRO_CHECK_HEADER_3, nodeid[1]);
-	register_write(EZRADIOPRO_CHECK_HEADER_2, nodeid[0]);
+	nodeId = id;
+	register_write(EZRADIOPRO_CHECK_HEADER_3, nodeId>>8);
+	register_write(EZRADIOPRO_CHECK_HEADER_2, nodeId&0xFF);
 }
 
 /// write to a radio register

@@ -121,13 +121,16 @@ extern __code const char 		g_banner_string[];	///< printable startup banner stri
 extern __pdata enum BoardFrequency	g_board_frequency;	///< board RF frequency from the bootloader
 extern __pdata uint8_t			g_board_bl_version;	///< bootloader version
 
+extern __pdata uint16_t nodeId; // Network Node Id
+
 /// staticstics maintained by the radio code
 struct statistics {
 	uint8_t average_rssi;
 	uint8_t average_noise;
-	uint16_t receive_count;
+//	uint16_t receive_count;
 };
-__pdata extern struct statistics statistics, remote_statistics;
+#define MAX_NODE_RSSI_STATS 8
+extern struct statistics statistics[MAX_NODE_RSSI_STATS], remote_statistics[MAX_NODE_RSSI_STATS];
 
 struct error_counts {
 	uint16_t rx_errors;		///< count of packet receive errors

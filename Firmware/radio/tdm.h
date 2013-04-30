@@ -48,9 +48,6 @@ extern void tdm_init(void);
 /// tdm main loop
 extern void tdm_serial_loop(void);
 
-/// setup a 16 bit node ID
-extern void tdm_set_node_id(__pdata uint16_t id);
-
 /// setup a 16 bit node count
 extern void tdm_set_node_count(__pdata uint16_t count);
 
