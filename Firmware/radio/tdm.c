@@ -47,6 +47,8 @@
 enum tdm_state { TDM_TRANSMIT, TDM_RECEIVE, TDM_SYNC };
 __pdata static enum tdm_state tdm_state;
 __pdata static uint16_t nodeTransmitSeq; // sequence the nodes can transmit in.
+__pdata static uint16_t paramNodeDestination; // User defined Packet destination
+__pdata static uint16_t nodeDestination; // Real Packet Destination (as some messages should be broadcasted)
 
 /// a packet buffer for the TDM code
 __xdata uint8_t	pbuf[MAX_PACKET_LENGTH];
@@ -218,7 +220,7 @@ tdm_state_update(__pdata uint16_t tdelta)
 
 	// have we passed the next transition point?
 	while (tdelta >= tdm_state_remaining) {
-		if ((nodeTransmitSeq < 0x8000 || nodeId == 0) && (nodeTransmitSeq++ % nodeCount) == nodeId) {
+		if ((nodeTransmitSeq < 0x8000 || nodeId == BASE_NODEID) && (nodeTransmitSeq++ % nodeCount) == nodeId) {
 			tdm_state = TDM_TRANSMIT;
 			nodeTransmitSeq %= nodeCount;
 		}
@@ -278,7 +280,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 {
 	// Sort out the sync period first..
 	if( tdm_state == TDM_SYNC) {
-		if (nodeId == 0) {
+		if (nodeId == BASE_NODEID) {
 			return YIELD_TRANSMIT;
 		}
 		else {
@@ -335,7 +337,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 void
 tdm_change_phase(void)
 {	
-	if ((nodeTransmitSeq < 0x8000 || nodeId == 0) && (nodeTransmitSeq++ % nodeCount) == nodeId) {
+	if ((nodeTransmitSeq < 0x8000 || nodeId == BASE_NODEID) && (nodeTransmitSeq++ % nodeCount) == nodeId) {
 		tdm_state = TDM_TRANSMIT;
 	}
 	else if (nodeTransmitSeq < 0x8000 && (nodeTransmitSeq-1 % nodeCount) == nodeCount-1) {
@@ -383,7 +385,7 @@ static void
 link_update(void)
 {
 	static uint8_t unlock_count, temperature_count;
-	if (nodeId == 0 || received_sync) {
+	if (nodeId == BASE_NODEID || received_sync) {
 		unlock_count = 0;
 		received_sync = false;
 		fhop_set_locked(true);
@@ -620,9 +622,9 @@ tdm_serial_loop(void)
 			continue;
 		}
 #else
-		// If we arn't in transmit, our node id isn't 0 and in tdm_sync
+		// If we arn't in transmit or our node id isn't BASE_NODEID and in tdm_sync
 		if (tdm_state != TDM_TRANSMIT) {
-			if(tdm_state != TDM_SYNC || nodeId != 0) {
+			if(tdm_state != TDM_SYNC || nodeId != BASE_NODEID) {
 				continue;
 			}
 		}		
@@ -696,7 +698,7 @@ tdm_serial_loop(void)
 		trailer.resend = packet_is_resend();
 
 		if (((tdm_state == TDM_TRANSMIT && len == 0 && send_statistics) 
-			|| (tdm_state == TDM_SYNC && nodeId == 0) ) && max_xmit >= sizeof(statistics)) {
+			|| (tdm_state == TDM_SYNC && nodeId == BASE_NODEID) ) && max_xmit >= sizeof(statistics)) {
 			// send a statistics packet
 			if(tdm_state != TDM_SYNC) {
 				send_statistics = 0;
@@ -718,7 +720,7 @@ tdm_serial_loop(void)
 		}
 
 		// if in sync mode and we are the base, add the sync bit
-		if (tdm_state == TDM_SYNC && nodeId == 0) {
+		if (tdm_state == TDM_SYNC && nodeId == BASE_NODEID) {
 			trailer.nodeid = get_transmit_channel() | 0x8000;
 		} else {
 			trailer.nodeid = nodeId;
@@ -729,6 +731,10 @@ tdm_serial_loop(void)
 		if (len != 0 && trailer.window != 0) {
 			// show the user that we're sending real data
 			LED_ACTIVITY = LED_ON;
+			nodeDestination = paramNodeDestination;
+		}
+		else { // Default to broadcast
+			nodeDestination = 0xFFFF; 
 		}
 
 		if(tdm_state != TDM_SYNC) {
@@ -755,7 +761,7 @@ tdm_serial_loop(void)
 		}
 
 		// start transmitting the packet
-		if (!radio_transmit(len + sizeof(trailer), pbuf, BASE_NODEID, tdm_state_remaining + (silence_period/2)) &&
+		if (!radio_transmit(len + sizeof(trailer), pbuf, nodeDestination, tdm_state_remaining + (silence_period/2)) &&
 		    len != 0 && trailer.window != 0 && trailer.command == 0) {
 			packet_force_resend();
 		}
@@ -794,6 +800,14 @@ tdm_set_node_count(__pdata uint16_t count)
 	nodeCount = count + 1; // add 1 for the sync channel
 }
 
+// setup a 16 bit node destination
+//
+void
+tdm_set_node_destination(__pdata uint16_t destination)
+{
+	paramNodeDestination = destination;
+}
+
 #if 0
 /// build the timing table
 static void 
@@ -803,6 +817,7 @@ tdm_build_timing_table(void)
 	__pdata uint16_t rate;
 	bool golay_saved = feature_golay;
 	feature_golay = false;
+	nodeDestination = 0xffff;
 
 	for (rate=2; rate<256; rate=(rate*3)/2) {
 		__pdata uint32_t latency_sum=0, per_byte_sum=0;
@@ -817,7 +832,7 @@ tdm_build_timing_table(void)
 				return;
 			}
 			t1 = timer2_tick();
-			if (!radio_transmit(0, pbuf, BASE_NODEID, 0xFFFF)) {
+			if (!radio_transmit(0, pbuf, nodeDestination, 0xFFFF)) {
 				break;
 			}
 			t2 = timer2_tick();
@@ -827,7 +842,7 @@ tdm_build_timing_table(void)
 
 			radio_set_channel(2);
 			t1 = timer2_tick();
-			if (!radio_transmit(size, pbuf, BASE_NODEID, 0xFFFF)) {
+			if (!radio_transmit(size, pbuf, nodeDestination, 0xFFFF)) {
 				if (size == 0) {
 					break;
 				}
@@ -945,7 +960,7 @@ tdm_init(void)
 		max_data_packet_length = MAX_PACKET_LENGTH - sizeof(trailer);
 	}
 
-	// set the silence period between packets0 to four times the packet latency
+	// set the silence period between packets to four times the packet latency
 	silence_period = 4*packet_latency;
 
 	// set the transmit window to allow for 2 full sized packets

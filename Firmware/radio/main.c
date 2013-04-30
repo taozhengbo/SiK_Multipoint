@@ -391,6 +391,9 @@ radio_init(void)
 	// setup node count
 	tdm_set_node_count(param_get(PARAM_NODECOUNT));
 	
+	// setup destination
+	tdm_set_node_destination(param_get(PARAM_NODEDESTINATION));
+	
 	// setup transmit power
 	radio_set_transmit_power(txpower);
 	

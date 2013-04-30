@@ -40,6 +40,7 @@ __pdata uint8_t receive_packet_length;
 __pdata uint8_t partial_packet_length;
 __pdata uint8_t last_rssi;
 __pdata uint8_t netid[2];
+__pdata uint8_t nodeid[2];
 
 static volatile __bit packet_received;
 static volatile __bit preamble_detected;
@@ -80,6 +81,7 @@ radio_receive_packet(uint8_t *length, __xdata uint8_t * __pdata buf)
 	__data uint16_t crc1, crc2;
 	__data uint8_t errcount = 0;
 	__data uint8_t elen;
+//	__data uint16_t destination;
 
 	if (!packet_received) {
 		return false;
@@ -98,6 +100,11 @@ radio_receive_packet(uint8_t *length, __xdata uint8_t * __pdata buf)
 	}
 #endif
 
+//	destination  = register_read(EZRADIOPRO_RECEIVED_HEADER_3) << 8;
+//	destination |= register_read(EZRADIOPRO_RECEIVED_HEADER_2);
+//	printf("DP-%u:%u\n\n", destination, ((uint16_t *)nodeid)[0]);
+
+	
 	if (!feature_golay) {
 		// simple unencoded packets
 		*length = receive_packet_length;
@@ -485,9 +492,10 @@ radio_transmit(uint8_t length, __xdata uint8_t * __pdata buf, uint16_t destinati
 	PA_ENABLE = 1;		// Set PA_Enable to turn on PA prior to TX cycle
 #endif
 	
+	register_write(EZRADIOPRO_TRANSMIT_HEADER_3, destination >> 8);
+	register_write(EZRADIOPRO_TRANSMIT_HEADER_2, destination & 0xFF);
+	
 	if (!feature_golay) {
-    register_write(EZRADIOPRO_TRANSMIT_HEADER_1, destination >> 8);
-		register_write(EZRADIOPRO_TRANSMIT_HEADER_0, destination & 0xFF);
 		ret = radio_transmit_simple(length, buf, timeout_ticks);
 	} else {
 		ret = radio_transmit_golay(length, buf, timeout_ticks);
@@ -773,25 +781,27 @@ radio_configure(__pdata uint8_t air_rate)
 		register_write(EZRADIOPRO_DATA_ACCESS_CONTROL,
 			       EZRADIOPRO_ENPACTX | 
 			       EZRADIOPRO_ENPACRX);
-		// 2 sync bytes and no header bytes
-		register_write(EZRADIOPRO_HEADER_CONTROL_2, EZRADIOPRO_HDLEN_0BYTE | EZRADIOPRO_SYNCLEN_2BYTE);
+		// 2 sync bytes and 2 header bytes
+		register_write(EZRADIOPRO_HEADER_CONTROL_2, EZRADIOPRO_HDLEN_2BYTE | EZRADIOPRO_SYNCLEN_2BYTE);
 
-		// no header check
-		register_write(EZRADIOPRO_HEADER_CONTROL_1, 0x00);
+		// check 2 bytes of header and allow broadcast on 2 bytes
+		register_write(EZRADIOPRO_HEADER_CONTROL_1, 0xCC);
 	} else {
 		register_write(EZRADIOPRO_DATA_ACCESS_CONTROL,
 			       EZRADIOPRO_ENPACTX | 
 			       EZRADIOPRO_ENPACRX |
 			       EZRADIOPRO_ENCRC |
 			       EZRADIOPRO_CRC_16);
-		// 2 sync bytes and 2 header bytes
-		register_write(EZRADIOPRO_HEADER_CONTROL_2, EZRADIOPRO_HDLEN_2BYTE | EZRADIOPRO_SYNCLEN_2BYTE);
-		// check 2 bytes of header
-		register_write(EZRADIOPRO_HEADER_CONTROL_1, 0x0C);
-		register_write(EZRADIOPRO_HEADER_ENABLE_3, 0xFF);
-		register_write(EZRADIOPRO_HEADER_ENABLE_2, 0xFF);
+		// 2 sync bytes and 4 header bytes
+		register_write(EZRADIOPRO_HEADER_CONTROL_2, EZRADIOPRO_HDLEN_4BYTE | EZRADIOPRO_SYNCLEN_2BYTE);
+		// check 4 bytes of header and allow broadcast on 2 bytes
+		register_write(EZRADIOPRO_HEADER_CONTROL_1, 0xCF);
+		register_write(EZRADIOPRO_HEADER_ENABLE_1, 0xFF);
+		register_write(EZRADIOPRO_HEADER_ENABLE_0, 0xFF);
 	}
-
+	// Headers 2/3 are always in use..
+	register_write(EZRADIOPRO_HEADER_ENABLE_3, 0xFF);
+	register_write(EZRADIOPRO_HEADER_ENABLE_2, 0xFF);
 
 	// set FIFO limits to allow for sending larger than 64 byte packets
 	register_write(EZRADIOPRO_TX_FIFO_CONTROL_1, TX_FIFO_THRESHOLD_HIGH);
@@ -937,10 +947,10 @@ radio_set_network_id(uint16_t id)
 	if (!feature_golay) {
 		// when not using golay encoding we use the hardware
 		// headers for network ID
-		register_write(EZRADIOPRO_TRANSMIT_HEADER_3, id >> 8);
-		register_write(EZRADIOPRO_TRANSMIT_HEADER_2, id & 0xFF);
-		register_write(EZRADIOPRO_CHECK_HEADER_3, id >> 8);
-		register_write(EZRADIOPRO_CHECK_HEADER_2, id & 0xFF);
+		register_write(EZRADIOPRO_TRANSMIT_HEADER_1, id >> 8);
+		register_write(EZRADIOPRO_TRANSMIT_HEADER_0, id & 0xFF);
+		register_write(EZRADIOPRO_CHECK_HEADER_1, id >> 8);
+		register_write(EZRADIOPRO_CHECK_HEADER_0, id & 0xFF);
 	}
 }
 
@@ -949,15 +959,10 @@ radio_set_network_id(uint16_t id)
 void
 radio_set_node_id(uint16_t id)
 {
-	__pdata uint8_t nodeid[2];
 	nodeid[0] = id&0xFF;
 	nodeid[1] = id>>8;
-	if (!feature_golay) {
-		// when not using golay encoding we use the hardware
-		// headers for node ID
-		register_write(EZRADIOPRO_CHECK_HEADER_1, id >> 8);
-		register_write(EZRADIOPRO_CHECK_HEADER_0, id & 0xFF);
-	}
+	register_write(EZRADIOPRO_CHECK_HEADER_3, nodeid[1]);
+	register_write(EZRADIOPRO_CHECK_HEADER_2, nodeid[0]);
 }
 
 /// write to a radio register

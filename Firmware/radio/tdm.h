@@ -43,22 +43,21 @@
 #define USE_TICK_YIELD 1
 
 /// initialise tdm subsystem
-///
 extern void tdm_init(void);
 
-// tdm main loop
-///
+/// tdm main loop
 extern void tdm_serial_loop(void);
 
-// setup a 16 bit node ID
-//
+/// setup a 16 bit node ID
 extern void tdm_set_node_id(__pdata uint16_t id);
 
-// setup a 16 bit node count
+/// setup a 16 bit node count
 extern void tdm_set_node_count(__pdata uint16_t count);
 
+/// setup a 16 bit node destination
+extern void tdm_set_node_destination(__pdata uint16_t destination);
+
 /// report tdm timings
-///
 extern void tdm_report_timing(void);
 
 /// dispatch a remote AT command

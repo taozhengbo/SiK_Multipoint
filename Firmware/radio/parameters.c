@@ -68,6 +68,7 @@ __code const struct parameter_info {
 /*14*/  {"RTSCTS",  0},
 /*15*/  {"NODEID",  2}, // The base node is '1' lets make new nodes 2
 /*16*/  {"NODECOUNT",  3}, // The amount of nodes in the network, this may could become auto discovery later.
+/*17*/  {"NODEDESTINATION", 0},
 };
 
 /// In-RAM parameter store.
@@ -86,48 +87,51 @@ param_check(__pdata enum ParamID id, __data uint32_t val)
 		return false;
 
 	switch (id) {
-	case PARAM_FORMAT:
-		return false;
-
-	case PARAM_SERIAL_SPEED:
-		return serial_device_valid_speed(val);
-
-	case PARAM_AIR_SPEED:
-		if (val > 256)
+		case PARAM_FORMAT:
 			return false;
-		break;
 
-	case PARAM_NETID:
-		// all values are OK
-		return true;
+		case PARAM_SERIAL_SPEED:
+			return serial_device_valid_speed(val);
 
-  case PARAM_NODEID:
-	  // Can not assign id above 32,766 upper most bit is sync, 0x7FFF is broadcast
-      if(val > 0x7FFE)
-        return false;
-      return true;
+		case PARAM_AIR_SPEED:
+			if (val > 256)
+				return false;
+			break;
 
-  case PARAM_NODECOUNT:
-    if(val < 2)
-      return false;
-    return true;
-      
-	case PARAM_TXPOWER:
-		if (val > BOARD_MAXTXPOWER)
-			return false;
-		break;
+		// NodeDestination can be set to broadcast 65535 otherwise must be a node id.
+		case PARAM_NODEDESTINATION:
+			if(val == 0xFFFF) 
+				return true;
+			// NOTE THERE IS NO BREAK HERE, THIS IS INTENTIONAL
+		
+		// Can not assign above the node count
+		case PARAM_NODEID:
+			if(val >= parameter_values[PARAM_NODECOUNT])
+				return false;
+			break;
+			
+		// Can not assign id above 32,767 upper most bit is sync
+		case PARAM_NODECOUNT:
+			if(val < 2 && val > 0x8000)
+			  return false;
+			break;
+		
+		case PARAM_TXPOWER:
+			if (val > BOARD_MAXTXPOWER)
+				return false;
+			break;
 
-	case PARAM_ECC:
-	case PARAM_MAVLINK:
-	case PARAM_OPPRESEND:
-		// boolean 0/1 only
-		if (val > 1)
-			return false;
-		break;
+		case PARAM_ECC:
+		case PARAM_MAVLINK:
+		case PARAM_OPPRESEND:
+			// boolean 0/1 only
+			if (val > 1)
+				return false;
+			break;
 
-	default:
-		// no sanity check for this value
-		break;
+		default:
+			// no sanity check for this value
+			break;
 	}
 	return true;
 }
@@ -141,53 +145,57 @@ param_set(__data enum ParamID param, __pdata param_t value)
 
 	// some parameters we update immediately
 	switch (param) {
-	case PARAM_TXPOWER:
-		// useful to update power level immediately when range
-		// testing in RSSI mode		
-		radio_set_transmit_power(value);
-		value = radio_get_transmit_power();
-		break;
+		case PARAM_TXPOWER:
+			// useful to update power level immediately when range
+			// testing in RSSI mode		
+			radio_set_transmit_power(value);
+			value = radio_get_transmit_power();
+			break;
 
-	case PARAM_DUTY_CYCLE:
-		// update duty cycle immediately
-		value = constrain(value, 0, 100);
-		duty_cycle = value;
-		break;
+		case PARAM_DUTY_CYCLE:
+			// update duty cycle immediately
+			value = constrain(value, 0, 100);
+			duty_cycle = value;
+			break;
 
-	case PARAM_LBT_RSSI:
-		// update LBT RSSI immediately
-		if (value != 0) {
-			value = constrain(value, 25, 220);
-		}
-		lbt_rssi = value;
-		break;
+		case PARAM_LBT_RSSI:
+			// update LBT RSSI immediately
+			if (value != 0) {
+				value = constrain(value, 25, 220);
+			}
+			lbt_rssi = value;
+			break;
 
-	case PARAM_MAVLINK:
-		feature_mavlink_framing = value?true:false;
-		value = feature_mavlink_framing?1:0;
-		break;
+		case PARAM_MAVLINK:
+			feature_mavlink_framing = value?true:false;
+			value = feature_mavlink_framing?1:0;
+			break;
 
-	case PARAM_OPPRESEND:
-		feature_opportunistic_resend = value?true:false;
-		value = feature_opportunistic_resend?1:0;
-		break;
+		case PARAM_OPPRESEND:
+			feature_opportunistic_resend = value?true:false;
+			value = feature_opportunistic_resend?1:0;
+			break;
 
-	case PARAM_RTSCTS:
-		feature_rtscts = value?true:false;
-		value = feature_rtscts?1:0;
-		break;
+		case PARAM_RTSCTS:
+			feature_rtscts = value?true:false;
+			value = feature_rtscts?1:0;
+			break;
 
-	case PARAM_NODEID:
-		radio_set_node_id(value);
-		tdm_set_node_id(value);
-		break;
-			
-	case PARAM_NODECOUNT:
-		tdm_set_node_count(value);
-		break;
-			
-	default:
-		break;
+		case PARAM_NODEID:
+			radio_set_node_id(value);
+			tdm_set_node_id(value);
+			break;
+				
+		case PARAM_NODECOUNT:
+			tdm_set_node_count(value);
+			break;
+				
+		case PARAM_NODEDESTINATION:
+			tdm_set_node_destination(value);
+			break;
+				
+		default:
+			break;
 	}
 
 	parameter_values[param] = value;

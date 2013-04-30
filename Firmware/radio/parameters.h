@@ -61,8 +61,9 @@ enum ParamID {
         PARAM_LBT_RSSI,       // listen before talk threshold
         PARAM_MANCHESTER,     // enable manchester encoding
         PARAM_RTSCTS,         // enable hardware flow control
-		PARAM_NODEID,         // node ID
-		PARAM_NODECOUNT,      // number of sequential nodes in the network
+        PARAM_NODEID,         // node ID
+        PARAM_NODECOUNT,      // number of sequential nodes in the network
+        PARAM_NODEDESTINATION,// packet destination
         PARAM_MAX             // must be last
 };
 
