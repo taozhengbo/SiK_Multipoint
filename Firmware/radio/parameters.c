@@ -102,6 +102,8 @@ param_check(__pdata enum ParamID id, __data uint32_t val)
 		case PARAM_NODEDESTINATION:
 			if(val == 0xFFFF) 
 				return true;
+			else if(parameter_values[PARAM_NODEID] == val)
+				return false;
 			// NOTE THERE IS NO BREAK HERE, THIS IS INTENTIONAL
 		
 		// Can not assign above the node count
