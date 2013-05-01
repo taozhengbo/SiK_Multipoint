@@ -127,6 +127,7 @@ static void swap_bytes(__pdata uint8_t ofs, __pdata uint8_t len)
 /// send a MAVLink status report packet
 void MAVLink_report(void)
 {
+	
 	pbuf[0] = using_mavlink_10?254:'U';
 	pbuf[1] = sizeof(struct mavlink_RADIO_v09);
 	pbuf[2] = seqnum++;
@@ -139,19 +140,33 @@ void MAVLink_report(void)
 		m->rxerrors = errors.rx_errors;
 		m->fixed    = errors.corrected_packets;
 		m->txbuf    = serial_read_space();
-		m->rssi     = statistics.average_rssi;
-		m->remrssi  = remote_statistics.average_rssi;
-		m->noise    = statistics.average_noise;
-		m->remnoise = remote_statistics.average_noise;
+		m->noise    = statistics[nodeId].average_noise;
+		if(nodeId == 0) {
+			m->rssi     = statistics[1].average_rssi;
+			m->remrssi  = remote_statistics[1].average_rssi;
+			m->remnoise = remote_statistics[1].average_noise;
+		}
+		else {
+			m->rssi     = statistics[0].average_rssi;
+			m->remrssi  = remote_statistics[0].average_rssi;
+			m->remnoise = remote_statistics[0].average_noise;			
+		}
 	} else {
 		struct mavlink_RADIO_v09 *m = (struct mavlink_RADIO_v09 *)&pbuf[6];
 		m->rxerrors = errors.rx_errors;
 		m->fixed    = errors.corrected_packets;
 		m->txbuf    = serial_read_space();
-		m->rssi     = statistics.average_rssi;
-		m->remrssi  = remote_statistics.average_rssi;
-		m->noise    = statistics.average_noise;
-		m->remnoise = remote_statistics.average_noise;
+		m->noise    = statistics[nodeId].average_noise;
+		if(nodeId == 0) {
+			m->rssi     = statistics[1].average_rssi;
+			m->remrssi  = remote_statistics[1].average_rssi;
+			m->remnoise = remote_statistics[1].average_noise;
+		}
+		else {
+			m->rssi     = statistics[0].average_rssi;
+			m->remrssi  = remote_statistics[0].average_rssi;
+			m->remnoise = remote_statistics[0].average_noise;			
+		}
 		swap_bytes(6+5, 4);
 	}
 	mavlink_crc();

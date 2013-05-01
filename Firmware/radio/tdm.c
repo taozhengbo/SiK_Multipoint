@@ -562,9 +562,10 @@ tdm_serial_loop(void)
 			
 			if (trailer.window == 0 && len != 0) {
 				// its a control packet
-				if (len == (sizeof(struct statistics)+2) && trailer.nodeid < MAX_NODE_RSSI_STATS) {
+				if (len == (sizeof(struct statistics)+sizeof(statistics_transmit_stats)) && trailer.nodeid < MAX_NODE_RSSI_STATS) {
+					len -= sizeof(statistics_transmit_stats);
 					// Get the last two bytes from the packet and compare them against our nodeId
-					if(((uint16_t*)(pbuf+len-2))[0] == nodeId)
+					if(((uint16_t*)(pbuf+len))[0] == nodeId)
 					{
 						memcpy(remote_statistics +trailer.nodeid, pbuf, len);
 					}
@@ -711,31 +712,31 @@ tdm_serial_loop(void)
 
 		trailer.bonus = (tdm_state == TDM_RECEIVE);
 		trailer.resend = packet_is_resend();
-
-		// send a statistics packet
-		if (tdm_state == TDM_TRANSMIT && len == 0 && statistics_transmit_stats < (nodeCount-1)
-			&& max_xmit >= sizeof(statistics) && nodeId < MAX_NODE_RSSI_STATS) {
 			
+		// Are we in transmit phase and have space for a stats packet
+		if (tdm_state == TDM_TRANSMIT && len == 0 && max_xmit >= (sizeof(statistics)+sizeof(statistics_transmit_stats))
+		// Do we need to send a stats packet
+			&& statistics_transmit_stats < (nodeCount-1) && nodeId < MAX_NODE_RSSI_STATS 
+		// Yeild at the start of our time period to allow better data throughput
+			&& tdm_state_remaining < (tx_window_width-packet_latency*2)) {
+			
+			// Catch for Node 0
 			if(statistics_transmit_stats == nodeId) {
 				statistics_transmit_stats++;
 			}
 			
 			len = sizeof(struct statistics);
-			// If we have valid data to send
-			if(statistics_transmit_stats < (nodeCount-1)) {
-				statistics[statistics_transmit_stats].average_noise = statistics[nodeId].average_noise;
-				memcpy(pbuf, statistics+statistics_transmit_stats, len);
-				memcpy(pbuf+len, &statistics_transmit_stats, 2);
+			statistics[statistics_transmit_stats].average_noise = statistics[nodeId].average_noise;
+			memcpy(pbuf, statistics+statistics_transmit_stats, len);
+			memcpy(pbuf+len, &statistics_transmit_stats, sizeof(statistics_transmit_stats));
+			len += sizeof(statistics_transmit_stats);
+			
+			statistics_transmit_stats++;
+			
+			// Catch for last node
+			if(statistics_transmit_stats == nodeId) {
 				statistics_transmit_stats++;
 			}
-			else { // If we are the last node lets repeat the first packet
-				statistics_transmit_stats = 0;
-				statistics[statistics_transmit_stats].average_noise = statistics[nodeId].average_noise;
-				memcpy(pbuf, statistics+statistics_transmit_stats, len);
-				memcpy(pbuf+len, &statistics_transmit_stats, 2);
-				statistics_transmit_stats = nodeCount;
-			}
-			len += 2;
 
 			// mark a stats packet with a zero window
 			trailer.window = 0;
