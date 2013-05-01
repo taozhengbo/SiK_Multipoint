@@ -69,6 +69,8 @@ __pdata static uint8_t max_data_packet_length;
 /// two zero length packets
 __pdata static uint16_t silence_period;
 
+// Half the linkupdate frequency to display test data
+static __bit test_display_toggle;
 
 #if USE_TICK_YIELD
 // records if the node so far has yielded to us,
@@ -164,11 +166,13 @@ __pdata static uint16_t nodeCount;
 void
 tdm_show_rssi(void)
 {
+	// Using printfl helps a bit but still overloads the cpu when AT&T=RSSI is used.
+	// This causes pauses and eventualy the nodes drift out of sync
 	__pdata uint8_t i;
 	for(i=0; i<(nodeCount-1) && i<MAX_NODE_RSSI_STATS; i++)
 	{
 		if (i != nodeId) {
-			printf("[%u] L/R RSSI: %u/%u  L/R noise: %u/%u\n",
+			printfl("[%u] L/R RSSI: %u/%u  L/R noise: %u/%u\n",
 				   (unsigned)i,
 				   (unsigned)statistics[i].average_rssi,
 				   (unsigned)remote_statistics[i].average_rssi,
@@ -176,7 +180,7 @@ tdm_show_rssi(void)
 				   (unsigned)remote_statistics[i].average_noise);
 		}
 	}
-	printf("[%u] pkts: %u txe=%u rxe=%u stx=%u srx=%u ecc=%u/%u temp=%d dco=%u\n",
+	printfl("[%u] pkts: %u txe=%u rxe=%u stx=%u srx=%u ecc=%u/%u temp=%d dco=%u\n",
 		   (unsigned)nodeId,
 		   (unsigned)statistics_receive_count,
 		   (unsigned)errors.tx_errors,
@@ -415,11 +419,17 @@ link_update(void)
 	}
 	if (unlock_count > 5) {
 		memset(remote_statistics, 0, sizeof(remote_statistics));
+		memset(statistics, 0, sizeof(statistics));
 	}
 
-	test_display = at_testmode;
 	statistics_transmit_stats = 0;
 
+	// Half the display rate
+	if(test_display_toggle) {
+		test_display = at_testmode;
+	}
+	test_display_toggle = !test_display_toggle;
+	
 	temperature_count++;
 	if (temperature_count == 4) {
 		// check every 2 seconds
