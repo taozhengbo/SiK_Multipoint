@@ -45,6 +45,9 @@ __pdata uint8_t pdata_canary = 0x41;
 __pdata char at_cmd[AT_CMD_MAXLEN + 1];
 __pdata uint8_t	at_cmd_len;
 
+// Index
+__pdata uint8_t		idx;
+
 // mode flags
 bool		at_mode_active;	///< if true, incoming bytes are for AT command
 bool		at_cmd_ready;	///< if true, at_cmd / at_cmd_len contain valid data
@@ -205,15 +208,52 @@ at_timer(void)
 }
 #pragma restore
 
+static uint32_t
+at_parse_number() __reentrant
+{
+	uint32_t	reg;
+	uint8_t		c;
+	
+	reg = 0;
+	for (;;) {
+		c = at_cmd[idx];
+		if (!isdigit(c))
+			break;
+		reg = (reg * 10) + (c - '0');
+		idx++;
+	}
+	return reg;
+}
+
 void
 at_command(void)
 {
+	__pdata uint16_t	destination;
+	
 	// require a command with the AT prefix
 	if (at_cmd_ready) {
 		if ((at_cmd_len >= 2) && (at_cmd[0] == 'R') && (at_cmd[1] == 'T')) {
 			// remote AT command - send it to the tdm
 			// system to send to the remote radio
-			tdm_remote_at();
+			
+			// get the register number first
+			idx = 3;
+			for (;;) {
+				if (at_cmd_len <= idx || at_cmd[idx] == ',')
+					break;
+				idx++;
+			}
+			
+			// If the RT command has a ',' followed by a destination
+			// send the RT packet to this node only
+			if(at_cmd[idx] == ',') {
+				at_cmd[idx++] = '\0';
+				destination = at_parse_number();
+				tdm_remote_at(destination);
+			}
+			else {
+				tdm_remote_at(0xFFFF); // 65535 = broadcast
+			}
 			at_cmd_len = 0;
 			at_cmd_ready = false;
 			return;
@@ -263,32 +303,13 @@ at_command(void)
 static void
 at_ok(void)
 {
-	printf("%s\n", "OK");
+	printf("[%u] OK\n", nodeId);
 }
 
 static void
 at_error(void)
 {
-	printf("%s\n", "ERROR");
-}
-
-__pdata uint8_t		idx;
-
-static uint32_t
-at_parse_number() __reentrant
-{
-	uint32_t	reg;
-	uint8_t		c;
-
-	reg = 0;
-	for (;;) {
-		c = at_cmd[idx];
-		if (!isdigit(c))
-			break;
-		reg = (reg * 10) + (c - '0');
-		idx++;
-	}
-	return reg;
+	printf("[%u] ERROR\n", nodeId);
 }
 
 static void
@@ -297,25 +318,26 @@ at_i(void)
 	switch (at_cmd[3]) {
 	case '\0':
 	case '0':
-		printf("%s\n", g_banner_string);
+		printf("[%u] %s\n", nodeId, g_banner_string);
 		return;
 	case '1':
-		printf("%s\n", g_version_string);
+		printf("[%u] %s\n", nodeId, g_version_string);
 		return;
 	case '2':
-		printf("%u\n", BOARD_ID);
+		printf("[%u] %u\n", nodeId, BOARD_ID);
 		break;
 	case '3':
-		printf("%u\n", g_board_frequency);
+		printf("[%u] %u\n", nodeId, g_board_frequency);
 		break;
 	case '4':
-		printf("%u\n", g_board_bl_version);
+		printf("[%u] %u\n", nodeId, g_board_bl_version);
 		return;
 	case '5': {
 		enum ParamID id;
 		// convenient way of showing all parameters
 		for (id = 0; id < PARAM_MAX; id++) {
-			printf("S%u: %s=%lu\n", 
+			printf("[%u] S%u: %s=%lu\n", 
+				   nodeId,
 			       (unsigned)id, 
 			       param_name(id), 
 			       (unsigned long)param_get(id));
@@ -352,7 +374,7 @@ at_s(void)
 	switch (at_cmd[idx]) {
 	case '?':
 		val = param_get(sreg);
-		printf("%lu\n", val);
+		printf("[%u] %lu\n", nodeId, val);
 		return;
 
 	case '=':
