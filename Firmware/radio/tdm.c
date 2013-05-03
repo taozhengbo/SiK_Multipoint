@@ -307,7 +307,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 		}
 		
 		if(!set_yield) {
-			if((lastTransmitWindow & 0x07FF) == ((nodeTransmitSeq-1) % (nodeCount-1))) {
+			if((lastTransmitWindow & 0x7FFF) == ((nodeTransmitSeq-1) % (nodeCount-1))) {
 				return YIELD_TRANSMIT;
 			}
 			else {
