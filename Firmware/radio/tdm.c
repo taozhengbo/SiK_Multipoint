@@ -158,7 +158,8 @@ struct tdm_trailer {
 __pdata struct tdm_trailer trailer;
 
 /// buffer to hold a remote AT command before sending
-static __pdata uint16_t send_at_command;
+static __bit            send_at_command;
+static __pdata uint16_t send_at_command_to;
 static __pdata char remote_at_cmd[AT_CMD_MAXLEN + 1];
 
 // local nodeCount
@@ -453,7 +454,8 @@ void
 tdm_remote_at(__pdata uint16_t destination)
 {
 	memcpy(remote_at_cmd, at_cmd, strlen(at_cmd)+1);
-	send_at_command = destination;
+	send_at_command_to = destination;
+	send_at_command = true;
 }
 
 // handle an incoming at command from the remote radio
@@ -470,7 +472,10 @@ handle_at_command(__pdata uint8_t len)
 		}
 		return;
 	}
-
+	
+	// Set the return address..
+	send_at_command_to = trailer.nodeid;
+	
 	// setup the command in the at_cmd buffer
 	memcpy(at_cmd, pbuf, len);
 	at_cmd[len] = 0;
@@ -722,18 +727,22 @@ tdm_serial_loop(void)
 		// ask the packet system for the next packet to send
 		// no data is to be sent during a sync period, the window is short
 		if (tdm_state != TDM_SYNC) {
-			if (send_at_command != nodeId && 
-				max_xmit >= strlen(remote_at_cmd)) {
+			if (send_at_command && max_xmit >= strlen(remote_at_cmd)) {
 				// send a remote AT command
 				len = strlen(remote_at_cmd);
 				memcpy(pbuf, remote_at_cmd, len);
 				trailer.command = 1;
-				nodeDestination = send_at_command;
-				send_at_command = nodeId;
+				nodeDestination = send_at_command_to;
+				send_at_command = false;
 			} else {
 				// get a packet from the serial port
 				len = packet_get_next(max_xmit, pbuf);
 				trailer.command = packet_is_injected();
+				
+				// If it's a AT return packet, set the return address
+				if(trailer.command) {
+					nodeDestination = send_at_command_to;
+				}
 			}
 		}
 		else {
