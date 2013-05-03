@@ -306,9 +306,8 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 			P0 &= ~0x02;
 		}
 		
-		
 		if(!set_yield) {
-			if(lastTransmitWindow == ((nodeTransmitSeq-1) % (nodeCount-1))) {
+			if((lastTransmitWindow & 0x07FF) == ((nodeTransmitSeq-1) % (nodeCount-1))) {
 				return YIELD_TRANSMIT;
 			}
 			else {
@@ -319,6 +318,11 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 			// Make sure all nodes so far have yielded to us..
 			if (lastTransmitWindow < 0x8000 && trailer.nodeid == ((lastTransmitWindow+1) % (nodeCount-1))) {
 				lastTransmitWindow = trailer.nodeid;
+			}
+			else // ensure that other nodes get a chance to respond first.
+			{
+				lastTransmitWindow = trailer.nodeid | 0x8000;
+				transmit_wait = packet_latency*2;
 			}
 		}
 	}
@@ -785,9 +789,9 @@ tdm_serial_loop(void)
 			trailer.window = 0;
 			trailer.resend = 0;
 		} 
-//		else if (tdm_state != TDM_TRANSMIT && len == 0 && !(tdm_state == TDM_SYNC && nodeId == BASE_NODEID)) {
-//			continue; // If we have nothing contructive to send be quiet..
-//		}
+		else if (tdm_state != TDM_TRANSMIT && len == 0 && !(tdm_state == TDM_SYNC && nodeId == BASE_NODEID)) {
+			continue; // If we have nothing contructive to send be quiet..
+		}
 		else {
 			// calculate the control word as the number of
 			// 16usec ticks that will be left in this
@@ -811,11 +815,16 @@ tdm_serial_loop(void)
 				// show the user that we're sending real data
 				LED_ACTIVITY = LED_ON;
 				nodeDestination = paramNodeDestination;
+//				printf("SDT:%u\n",nodeDestination);
 			}
 			else { // Default to broadcast
 				nodeDestination = 0xFFFF; 
 			}
 		}
+//		else
+//		{
+//			printf("SCT:%u\n",nodeDestination);
+//		}
 #if USE_TICK_YIELD
 		if(tdm_state == TDM_TRANSMIT) {
 			if (len == 0) {
