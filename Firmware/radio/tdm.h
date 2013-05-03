@@ -58,7 +58,7 @@ extern void tdm_set_node_destination(__pdata uint16_t destination);
 extern void tdm_report_timing(void);
 
 /// dispatch a remote AT command
-extern void tdm_remote_at(void);
+extern void tdm_remote_at(__pdata uint16_t destination);
 
 /// change tdm phase (for testing recovery)
 extern void tdm_change_phase(void);
