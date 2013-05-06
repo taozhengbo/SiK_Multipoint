@@ -156,21 +156,21 @@ packet_get_next(register uint8_t max_xmit, __xdata uint8_t * __pdata buf)
 	    (feature_opportunistic_resend &&
 	     last_sent_is_resend == false && 
 	     last_sent_len != 0 && 
-	     slen < PACKET_RESEND_THRESHOLD)) {
-			if (max_xmit < last_sent_len) {
-				last_sent_len = 0;
-				return 0;
-			}
-			last_sent_is_resend = true;
-			force_resend = false;
-			memcpy(buf, last_sent, last_sent_len);
-			slen = last_sent_len;
+	     slen < PACKET_RESEND_THRESHOLD))
+	{
+		if (max_xmit < last_sent_len) {
 			last_sent_len = 0;
-			return (slen & 0xFF);
+			return 0;
+		}
+		last_sent_is_resend = true;
+		force_resend = false;
+		memcpy(buf, last_sent, last_sent_len);
+		slen = last_sent_len;
+		last_sent_len = 0;
+		return (slen & 0xFF);
 	}
-	
 	last_sent_is_resend = false;
-	
+
 	if (injected_packet) {
 		// send a previously injected packet
 		slen = last_sent_len;
@@ -188,7 +188,6 @@ packet_get_next(register uint8_t max_xmit, __xdata uint8_t * __pdata buf)
 		last_sent_is_injected = true;
 		return last_sent_len;
 	}
-	
 	last_sent_is_injected = false;
 
 	// if we have received something via serial see how
