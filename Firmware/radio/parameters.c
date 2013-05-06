@@ -69,6 +69,7 @@ __code const struct parameter_info {
 /*15*/  {"NODEID",  2}, // The base node is '1' lets make new nodes 2
 /*16*/  {"NODECOUNT",  3}, // The amount of nodes in the network, this may could become auto discovery later.
 /*17*/  {"NODEDESTINATION", 65535},
+/*16*/  {"SYNCANY",  0}, // The amount of nodes in the network, this may could become auto discovery later.
 };
 
 /// In-RAM parameter store.
@@ -126,6 +127,7 @@ param_check(__pdata enum ParamID id, __data uint32_t val)
 		case PARAM_ECC:
 		case PARAM_MAVLINK:
 		case PARAM_OPPRESEND:
+		case PARAM_SYNCANY:
 			// boolean 0/1 only
 			if (val > 1)
 				return false;
@@ -195,6 +197,10 @@ param_set(__data enum ParamID param, __pdata param_t value)
 			tdm_set_node_destination(value);
 			break;
 				
+		case PARAM_SYNCANY:
+			tdm_set_sync_any(value);
+			break;
+			
 		default:
 			break;
 	}

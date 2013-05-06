@@ -54,6 +54,8 @@
 // encoding this needs to be a multiple of 6
 #define MAX_PACKET_LENGTH 252
 
+// Turn on TX/RX Debug pins
+//#define DEBUG_PINS_RADIO_TX_RX
 
 #include "board.h"
 #include "serial.h"

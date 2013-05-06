@@ -35,6 +35,7 @@
 #define _FREQ_HOPPING_H_
 
 #define MAX_FREQ_CHANNELS 50
+#define SYNC_CHANNEL      0
 
 /// initialise frequency hopping logic
 ///

@@ -37,6 +37,10 @@
 
 #include <stdbool.h>
 
+// Debug pins - Only one may be defined
+//#define DEBUG_PINS_YIELD
+//#define DEBUG_PINS_SYNC
+
 // Hard coded for the inital testing, need to figure out how this could be changed on the fly later down the track
 // Maybe a new command seprate from the AT? Without entering +++ mode? more thought needed
 #define BASE_NODEID 0
@@ -53,6 +57,9 @@ extern void tdm_set_node_count(__pdata uint16_t count);
 
 /// setup a 16 bit node destination
 extern void tdm_set_node_destination(__pdata uint16_t destination);
+
+/// setup if the node can sync from any
+extern void tdm_set_sync_any(__pdata uint8_t any);
 
 /// report tdm timings
 extern void tdm_report_timing(void);

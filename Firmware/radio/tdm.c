@@ -94,6 +94,7 @@ static __bit transmit_yield;
 // is set for any received sync packet
 static __bit blink_state;
 static __bit received_sync;
+static __bit sync_any;
 
 /// the latency in 16usec timer2 ticks for sending a zero length packet
 __pdata static uint16_t packet_latency;
@@ -243,13 +244,14 @@ tdm_state_update(__pdata uint16_t tdelta)
 			// Check for Bonus?
 			tdm_state = TDM_RECEIVE; // If there are other nodes yet to transmit lets hear them first
 		}
-
-//		if(tdm_state == TDM_SYNC) {
-//			P0 |= 0x02;
-//		}
-//		else {
-//			P0 &= ~0x02;
-//		}
+#ifdef DEBUG_PINS_SYNC
+		if(tdm_state == TDM_SYNC) {
+			P0 |= 0x02;
+		}
+		else {
+			P0 &= ~0x02;
+		}
+#endif // DEBUG_PINS_SYNC
 		
 		// work out the time remaining in this state
 		tdelta -= tdm_state_remaining;
@@ -303,7 +305,9 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 	if (tdm_state != TDM_TRANSMIT) {
 		if(received_packet) {
 			received_packet = false;
+#ifdef DEBUG_PINS_YIELD
 			P0 &= ~0x02;
+#endif // DEBUG_PINS_YIELD
 		}
 		
 		if(!set_yield) {
@@ -423,18 +427,14 @@ link_update(void)
 		LED_RADIO = blink_state;
 		blink_state = !blink_state;
 		nodeTransmitSeq = 0xFFFF;
-		fhop_set_locked(false);
-	}
-
-	if (unlock_count != 0) {
-//		statistics[x].average_rssi = (radio_last_rssi() + 3*(uint16_t)statistics[x].average_rssi)/4;
-//
-		// reset statistics when unlocked
-		statistics_receive_count = 0;
-	}
-	if (unlock_count > 5) {
+		
 		memset(remote_statistics, 0, sizeof(remote_statistics));
 		memset(statistics, 0, sizeof(statistics));
+		
+		fhop_set_locked(false); // Set channel back to sync and try again
+		
+		// reset statistics when unlocked
+		statistics_receive_count = 0;
 	}
 
 	statistics_transmit_stats = 0;
@@ -567,7 +567,9 @@ tdm_serial_loop(void)
 			if(tdm_state == TDM_TRANSMIT){
 				received_packet = true;
 				lastTransmitWindow = 0x8000;
+#ifdef DEBUG_PINS_YIELD
 				P0 |= 0x02;
+#endif // DEBUG_PINS_YIELD
 			}
 #endif // USE_TICK_YIELD
 			
@@ -583,6 +585,10 @@ tdm_serial_loop(void)
 				received_sync = true;
 				continue;
 			}
+//			else if (sync_any) {
+//				nodeTransmitSeq = trailer.nodeid + 1;
+//				received_sync = true;
+//			}
 			
 			// update filtered RSSI value and packet stats
 			if(trailer.nodeid < MAX_NODE_RSSI_STATS) {
@@ -694,7 +700,9 @@ tdm_serial_loop(void)
 			if(tdm_state == TDM_TRANSMIT){
 				received_packet = true;
 				lastTransmitWindow = 0x8000;
+#ifdef DEBUG_PINS_YIELD
 				P0 |= 0x02;
+#endif // DEBUG_PINS_YIELD
 			}
 #endif // USE_TICK_YIELD
 			
@@ -889,6 +897,12 @@ void
 tdm_set_node_destination(__pdata uint16_t destination)
 {
 	paramNodeDestination = destination;
+}
+
+void
+tdm_set_sync_any(__pdata uint8_t any)
+{
+	sync_any = any;
 }
 
 #if 0
@@ -1099,7 +1113,9 @@ tdm_init(void)
 
 #if USE_TICK_YIELD
 	received_packet = false;
+#ifdef DEBUG_PINS_YIELD
 	P0 &= ~0x02;
+#endif // DEBUG_PINS_YIELD
 #endif // USE_TICK_YIELD
 }
 

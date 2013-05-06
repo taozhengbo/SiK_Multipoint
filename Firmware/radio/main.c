@@ -393,6 +393,9 @@ radio_init(void)
 	// setup destination
 	tdm_set_node_destination(param_get(PARAM_NODEDESTINATION));
 	
+	// setup sync from any node
+	tdm_set_sync_any(param_get(PARAM_SYNCANY));
+		
 	// setup transmit power
 	radio_set_transmit_power(txpower);
 	

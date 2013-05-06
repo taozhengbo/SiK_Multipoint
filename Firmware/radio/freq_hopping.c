@@ -103,15 +103,17 @@ fhop_receive_channel(void)
 uint8_t 
 fhop_sync_channel(void)
 {
-	return channel_map[0]; // Fixed sync channel
+	return channel_map[SYNC_CHANNEL]; // Fixed sync channel
 }
 
+// get the current transmit channel (NOT the map frequency)
 uint8_t
 get_transmit_channel(void)
 {
 	return transmit_channel;
 }
 
+// set the current transmit channel (NOT the map frequency)
 void
 set_transmit_channel(uint8_t channel)
 {
@@ -127,9 +129,10 @@ fhop_window_change(void)
 		// when we have lock, the receive channel follows the
 		// transmit channel
 		receive_channel = transmit_channel;
-	} else if (transmit_channel == 0) {
+	}
+	else {
 		// when we don't have lock, listen on the sync channel
-		receive_channel = fhop_sync_channel(); //(receive_channel + 1) % num_fh_channels;
+		receive_channel = SYNC_CHANNEL;
 		debug("Trying RCV on channel %d\n", (int)receive_channel);
 	}
 }
@@ -144,14 +147,5 @@ fhop_set_locked(bool locked)
 	}
 #endif
 	have_radio_lock = locked;
-//	if (have_radio_lock) {
-//		// we have just received a packet, so we know the
-//		// other radios transmit channel must be our receive
-//		// channel
-//		transmit_channel = receive_channel;
-//	} else {
-//		// try the next receive channel
-//		receive_channel = (receive_channel+1) % num_fh_channels;
-//	}
 }
 
