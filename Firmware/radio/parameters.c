@@ -67,9 +67,9 @@ __code const struct parameter_info {
 /*13*/  {"MANCHESTER",  0},
 /*14*/  {"RTSCTS",  0},
 /*15*/  {"NODEID",  2}, // The base node is '1' lets make new nodes 2
-/*16*/  {"NODECOUNT",  3}, // The amount of nodes in the network, this may could become auto discovery later.
-/*17*/  {"NODEDESTINATION", 65535},
-/*16*/  {"SYNCANY",  0}, // The amount of nodes in the network, this may could become auto discovery later.
+/*16*/  {"NODEDESTINATION", 65535},
+/*17*/  {"SYNCANY",  0}, // The amount of nodes in the network, this may could become auto discovery later.
+/*18*/  {"NODECOUNT",  3}, // The amount of nodes in the network, this may could become auto discovery later.
 };
 
 /// In-RAM parameter store.

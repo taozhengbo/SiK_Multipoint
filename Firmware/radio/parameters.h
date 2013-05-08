@@ -62,9 +62,9 @@ enum ParamID {
         PARAM_MANCHESTER,     // enable manchester encoding
         PARAM_RTSCTS,         // enable hardware flow control
         PARAM_NODEID,         // node ID
-        PARAM_NODECOUNT,      // number of sequential nodes in the network
         PARAM_NODEDESTINATION,// packet destination
         PARAM_SYNCANY,        // Let this node sync from any in the network not just the base
+        PARAM_NODECOUNT,      // number of sequential nodes in the network
         PARAM_MAX             // must be last
 };
 
