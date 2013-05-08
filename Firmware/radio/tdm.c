@@ -409,10 +409,10 @@ static void temperature_update(void)
 
 /// blink the radio LED if we have not received any packets
 ///
+static uint8_t unlock_count, temperature_count;
 static void
 link_update(void)
 {
-	static uint8_t unlock_count, temperature_count;
 	if (nodeId == BASE_NODEID || received_sync) {
 		unlock_count = 0;
 		received_sync = false;
@@ -431,10 +431,17 @@ link_update(void)
 		memset(remote_statistics, 0, sizeof(remote_statistics));
 		memset(statistics, 0, sizeof(statistics));
 		
-		fhop_set_locked(false); // Set channel back to sync and try again
-		
 		// reset statistics when unlocked
 		statistics_receive_count = 0;
+	}
+	
+	if (unlock_count % 5 == 4) {
+		if(sync_any) {
+			fhop_window_change(); // Try our luck on another channel
+		}
+		else {
+			fhop_set_locked(false); // Set channel back to sync and try again
+		}
 	}
 
 	statistics_transmit_stats = 0;
@@ -585,10 +592,10 @@ tdm_serial_loop(void)
 				received_sync = true;
 				continue;
 			}
-//			else if (sync_any) {
-//				nodeTransmitSeq = trailer.nodeid + 1;
-//				received_sync = true;
-//			}
+			else if (sync_any) {
+				nodeTransmitSeq = trailer.nodeid + 1;
+				received_sync = true;
+			}
 			
 			// update filtered RSSI value and packet stats
 			if(trailer.nodeid < MAX_NODE_RSSI_STATS) {
