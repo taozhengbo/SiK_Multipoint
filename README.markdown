@@ -22,29 +22,29 @@ Currently the firmware components include:
 See the user documentation above for a list of current firmware features
 
 ## Multipoint Support - Differences from standard image
- - New AT Variables
+### New AT Variables
 
-S15: NODEID
+###### S15: NODEID
 MUST be a unique ID on the network, otherwise cross talk will occur
 Base ID is defined by setting to 0, this is the node that keeps the network in sync with all other nodes.
 When setting the the NODEID to the base (ie 0) it will always have link to it's self thus link will never be lost.
 
-S16: NODEDESTINATION
+###### S16: NODEDESTINATION
 This is where all the serial data recived on this node should be sent to.
 For example, to send all data to the base node only set this to 0.
 DEFAULT is 65535 which is broadcast to all nodes.
 
-S17: SYNCANY
+###### S17: SYNCANY
 Sync Any should be used sparingly, this allows any node to sync from any node in the network not just the base.
 By allowing many nodes to sync from each other they could drift away from the main sync channel,
 thus efectivly becoming a diffrent NETID.
 
-S18: NODECOUNT
+###### S18: NODECOUNT
 This is the number of nodes in the nework, so if you have 3 nodes (Id's 0, 1, 2) you have a network of 3.
 In the next revision of the software this could disapear and become auto detect.
 The easiest way to determin the correct node count for the network is - max(NODEID)+1
 
- - Diffrent RT Syntax
+### Diffrent RT Syntax
 
 All RT's are sent to every node by default, to send them to one node only folow the command with a comma and node id.
 Example getting the parameter list from base node would be 'RTI5,0'
