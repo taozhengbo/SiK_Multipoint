@@ -94,6 +94,7 @@ static __bit transmit_yield;
 // is set for any received sync packet
 static __bit blink_state;
 static __bit received_sync;
+__pdata static uint8_t sync_count; // the amount of successfull times synced 
 static __bit sync_any;
 
 /// the latency in 16usec timer2 ticks for sending a zero length packet
@@ -424,6 +425,7 @@ link_update(void)
 	if (unlock_count < 6) {
 		LED_RADIO = LED_ON;
 	} else {
+		sync_count = 0;
 		LED_RADIO = blink_state;
 		blink_state = !blink_state;
 		nodeTransmitSeq = 0xFFFF;
@@ -587,12 +589,18 @@ tdm_serial_loop(void)
 			// Sync the timing sequence with the incoming packet
 			// trailer.nodeid in a sync byte is the next channel to receive/transmit on
 			if(trailer.nodeid & 0x8000){
+				if(sync_count < 0xFF && nodeTransmitSeq == 0){
+					sync_count += 1;
+				}
 				nodeTransmitSeq = 0;
 				set_transmit_channel(trailer.nodeid & 0x7FFF);
 				received_sync = true;
 				continue;
 			}
 			else if (sync_any) {
+				if(sync_count < 0xFF && nodeTransmitSeq == trailer.nodeid + 1){
+					sync_count += 1;
+				}
 				nodeTransmitSeq = trailer.nodeid + 1;
 				received_sync = true;
 			}
@@ -716,6 +724,11 @@ tdm_serial_loop(void)
 			continue;
 		}
 		
+		// Dont send anything until we have received 20 good sync bytes
+		if (nodeId != BASE_NODEID && sync_count < 20) {
+			continue;
+		}
+
 		// sample the background noise when it is out turn to
 		// transmit, but we are not transmitting,
 		// averaged over around 4 samples
@@ -830,16 +843,12 @@ tdm_serial_loop(void)
 				// show the user that we're sending real data
 				LED_ACTIVITY = LED_ON;
 				nodeDestination = paramNodeDestination;
-//				printf("SDT:%u\n",nodeDestination);
 			}
 			else { // Default to broadcast
 				nodeDestination = 0xFFFF; 
 			}
 		}
-//		else
-//		{
-//			printf("SCT:%u\n",nodeDestination);
-//		}
+
 #if USE_TICK_YIELD
 		if(tdm_state == TDM_TRANSMIT) {
 			if (len == 0) {
