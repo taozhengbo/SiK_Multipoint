@@ -171,7 +171,7 @@ hardware_init(void)
 #ifdef _BOARD_RFD900A			// Redefine port skips to override bootloader defs
 	P0SKIP  =  0xCF;                // P0 UART avail on XBAR
 	P1SKIP  =  0xF8;                // P1 SPI1 avail on XBAR 
-	P2SKIP  =  0x4F;                // P2 CEX0 avail on XBAR P2.4, rest GPIO
+	P2SKIP  =  0xCF;                // P2 CEX0 avail on XBAR P2.4, rest GPIO
 #endif
 
 	// Configure crossbar for UART
