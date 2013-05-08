@@ -1195,7 +1195,7 @@ INTERRUPT(Receiver_ISR, INTERRUPT_INT0)
 {
 	__data uint8_t status, status2;
 #ifdef DEBUG_PINS_RADIO_TX_RX
-	P2 |=  0x40;
+	P2 |=  0x02;
 #endif // DEBUG_PINS_RADIO_TX_RX
 	status2 = register_read(EZRADIOPRO_INTERRUPT_STATUS_2);
 	status  = register_read(EZRADIOPRO_INTERRUPT_STATUS_1);
@@ -1244,7 +1244,7 @@ INTERRUPT(Receiver_ISR, INTERRUPT_INT0)
 		register_write(EZRADIOPRO_OPERATING_AND_FUNCTION_CONTROL_1, EZRADIOPRO_PLLON);
 	}
 #ifdef DEBUG_PINS_RADIO_TX_RX
-	P2 &= ~0x40;
+	P2 &= ~0x02;
 #endif // DEBUG_PINS_RADIO_TX_RX
 	return;
 
@@ -1254,7 +1254,7 @@ rxfail:
 	}
 	radio_receiver_on();
 #ifdef DEBUG_PINS_RADIO_TX_RX
-	P2 &= ~0x40;
+	P2 &= ~0x02;
 #endif // DEBUG_PINS_RADIO_TX_RX
 }
 

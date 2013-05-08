@@ -37,9 +37,9 @@
 
 #include <stdbool.h>
 
-// Debug pins - Only one may be defined
-//#define DEBUG_PINS_YIELD
-//#define DEBUG_PINS_SYNC
+// Debug pins
+//#define DEBUG_PINS_YIELD // P2.6
+//#define DEBUG_PINS_SYNC  // P0.1
 
 // Hard coded for the inital testing, need to figure out how this could be changed on the fly later down the track
 // Maybe a new command seprate from the AT? Without entering +++ mode? more thought needed

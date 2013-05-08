@@ -55,7 +55,7 @@
 #define MAX_PACKET_LENGTH 252
 
 // Turn on TX/RX Debug pins
-//#define DEBUG_PINS_RADIO_TX_RX
+//#define DEBUG_PINS_RADIO_TX_RX // TX P2.0 - RX P2.1
 
 #include "board.h"
 #include "serial.h"

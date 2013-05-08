@@ -306,7 +306,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 		if(received_packet) {
 			received_packet = false;
 #ifdef DEBUG_PINS_YIELD
-			P0 &= ~0x02;
+			P2 &= ~0x40;
 #endif // DEBUG_PINS_YIELD
 		}
 		
@@ -575,7 +575,7 @@ tdm_serial_loop(void)
 				received_packet = true;
 				lastTransmitWindow = 0x8000;
 #ifdef DEBUG_PINS_YIELD
-				P0 |= 0x02;
+				P2 |= 0x40;
 #endif // DEBUG_PINS_YIELD
 			}
 #endif // USE_TICK_YIELD
@@ -708,7 +708,7 @@ tdm_serial_loop(void)
 				received_packet = true;
 				lastTransmitWindow = 0x8000;
 #ifdef DEBUG_PINS_YIELD
-				P0 |= 0x02;
+				P2 |= 0x40;
 #endif // DEBUG_PINS_YIELD
 			}
 #endif // USE_TICK_YIELD
@@ -1121,7 +1121,7 @@ tdm_init(void)
 #if USE_TICK_YIELD
 	received_packet = false;
 #ifdef DEBUG_PINS_YIELD
-	P0 &= ~0x02;
+	P2 &= ~0x40;
 #endif // DEBUG_PINS_YIELD
 #endif // USE_TICK_YIELD
 }
