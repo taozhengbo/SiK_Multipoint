@@ -45,6 +45,7 @@ In the next revision of the software this could disapear and become auto detect.
 The easiest way to determin the correct node count for the network is - max(NODEID)+1
 
  - Diffrent RT Syntax
+
 All RT's are sent to every node by default, to send them to one node only folow the command with a comma and node id.
 Example getting the parameter list from base node would be 'RTI5,0'
 
