@@ -609,7 +609,9 @@ tdm_serial_loop(void)
 				nodeTransmitSeq = 0;
 				set_transmit_channel(trailer.nodeid & 0x7FFF);
 				received_sync = true;
+#if USE_TICK_YIELD
 				tdm_yield_update(YIELD_SET, YIELD_DATA);
+#endif // USE_TICK_YIELD
 				continue;
 			}
 			// We dont want to sync off nodes sending bonus data
@@ -779,6 +781,7 @@ tdm_serial_loop(void)
 			max_xmit = max_data_packet_length;
 		}
 
+#if USE_TICK_YIELD
 		// Check to see if we need to send a dummy packet to inform everyone in the network we want to send data.
 		// This is done when we are yielding only
 		if(serial_read_available() > 0 && transmit_yield && tdm_state != TDM_TRANSMIT)
@@ -789,9 +792,11 @@ tdm_serial_loop(void)
 			nodeDestination = paramNodeDestination;
 			transmit_yield = false;
 		}
+		else
+#endif // USE_TICK_YIELD
 		// ask the packet system for the next packet to send
 		// no data is to be sent during a sync period, the window is short
-		else if (tdm_state != TDM_SYNC) {
+		if (tdm_state != TDM_SYNC) {
 			if (send_at_command && max_xmit >= strlen(remote_at_cmd)) {
 				// send a remote AT command
 				len = strlen(remote_at_cmd);
