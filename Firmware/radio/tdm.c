@@ -80,11 +80,11 @@ __pdata static uint16_t lastTransmitWindow;
 static __bit  received_packet;
 static __bit  yielded_slot; 
 
-enum tdm_yield { YIELD_SET=true, YIELD_GET=false, YIELD_TRANSMIT=true, YIELD_RECEIVE=false, YIELD_NO_DATA=false };
-#endif // USE_TICK_YIELD
-
-/// whether we have yielded our window to the other radio
+/// whether we have yielded our window to the other radio, or should send a yield packet
 static __bit transmit_yield;
+
+enum tdm_yield { YIELD_SET=true, YIELD_GET=false, YIELD_TRANSMIT=true, YIELD_RECEIVE=false, YIELD_NO_DATA=false, YIELD_DATA=true };
+#endif // USE_TICK_YIELD
 
 // activity indication
 // when the 16 bit timer2_tick() value wraps we check if we have received a
@@ -294,7 +294,7 @@ static uint8_t
 tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 {
 	// Sort out the sync period first..
-	if( tdm_state == TDM_SYNC) {
+	if(tdm_state == TDM_SYNC && !set_yield) {
 		if (nodeId == BASE_NODEID) {
 			return YIELD_TRANSMIT;
 		}
@@ -311,6 +311,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 #endif // DEBUG_PINS_YIELD
 		}
 		
+		// REMEMBER nodeCount is set one higher than the user has set, this is to add sync to the sequence
 		if(!set_yield) {
 			if((lastTransmitWindow & 0x7FFF) == ((nodeTransmitSeq-1) % (nodeCount-1))) {
 				return YIELD_TRANSMIT;
@@ -320,16 +321,29 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 			}
 		}
 		else if(no_data) {
+			// Mark the first packet to send as a interrupt packet
+			if((lastTransmitWindow & 0x7FFF) != trailer.nodeid){
+				transmit_yield = true;
+			}
+			
 			// Make sure all nodes so far have yielded to us..
 			if (lastTransmitWindow < 0x8000 && trailer.nodeid == ((lastTransmitWindow+1) % (nodeCount-1))) {
 				lastTransmitWindow = trailer.nodeid;
+				transmit_wait = packet_latency;
 			}
-			else // ensure that other nodes get a chance to respond first.
-			{
+			// Ensure that other nodes get a chance to respond before we take their slot.
+			else {
 				lastTransmitWindow = trailer.nodeid | 0x8000;
 				transmit_wait = packet_latency*2;
 			}
 		}
+		// Change the Window so we don't send any data without politely asking first
+		else {
+			lastTransmitWindow = nodeId | 0x8000;
+		}
+
+		// Ensure it defaults to receive though this should only be reached when setting yield
+		return YIELD_RECEIVE;
 	}
 	else if(tdm_state == TDM_TRANSMIT) { // We must be in Transmit Mode
 		// If we have recived a packet during our Transmit window we have been yielded..
@@ -339,7 +353,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 		}
 		
 		if(yielded_slot) {
-			// Change the Window so we don't send any data till it's our turn again
+			// Change the Window so we don't send any data without politely asking first
 			lastTransmitWindow = 0x8000;
 		}
 		else {
@@ -351,7 +365,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 			transmit_yield = false;
 			
 			// Lets wait to see if anyone else needs to transmit
-			transmit_wait = packet_latency*4;
+			transmit_wait = packet_latency*6;
 
 			return YIELD_RECEIVE;
 		}
@@ -595,9 +609,11 @@ tdm_serial_loop(void)
 				nodeTransmitSeq = 0;
 				set_transmit_channel(trailer.nodeid & 0x7FFF);
 				received_sync = true;
+				tdm_yield_update(YIELD_SET, YIELD_DATA);
 				continue;
 			}
-			else if (sync_any) {
+			// We dont want to sync off nodes sending bonus data
+			else if (sync_any && !trailer.bonus) {
 				if(sync_count < 0xFF && nodeTransmitSeq == trailer.nodeid + 1){
 					sync_count += 1;
 				}
@@ -635,17 +651,18 @@ tdm_serial_loop(void)
 				last_t = tnow;
 
 				if (trailer.command == 1) {
-					handle_at_command(len);
+					// Skip Interupt packets (sent at the start of talking control of someone elses slot)
+					if(len > 1)
+					{
+						handle_at_command(len);
+					}
 				} else if (len != 0 && 
 					   !packet_is_duplicate(len, pbuf, trailer.resend) &&
 					   !at_mode_active) {
-					// its user data - send it out
-					// the serial port
-					//printf("rcv(%d,[", len);
+					// its user data - send it out the serial port
 					LED_ACTIVITY = LED_ON;
 					serial_write_buf(pbuf, len);
 					LED_ACTIVITY = LED_OFF;
-					//printf("]\n");
 				}
 			}
 			continue;
@@ -686,16 +703,22 @@ tdm_serial_loop(void)
 		// bonus ticks
 #if USE_TICK_YIELD
 		if (tdm_yield_update(YIELD_GET, YIELD_NO_DATA) == YIELD_RECEIVE) {
+#ifdef DEBUG_PINS_TRANSMIT_RECEIVE
+			P2 &= ~0x04;
+#endif // DEBUG_PINS_TRANSMIT_RECEIVE
 			continue;
 		}
-#else
+#ifdef DEBUG_PINS_TRANSMIT_RECEIVE
+		P2 |= 0x04;
+#endif // DEBUG_PINS_TRANSMIT_RECEIVE
+#else // USE_TICK_YIELD
 		// If we arn't in transmit or our node id isn't BASE_NODEID and in tdm_sync
 		if (tdm_state != TDM_TRANSMIT) {
 			if(tdm_state != TDM_SYNC || nodeId != BASE_NODEID) {
 				continue;
 			}
 		}		
-#endif
+#endif // USE_TICK_YIELD
 
 		if (transmit_wait != 0) {
 			// we're waiting for a preamble to turn into a packet
@@ -756,9 +779,19 @@ tdm_serial_loop(void)
 			max_xmit = max_data_packet_length;
 		}
 
+		// Check to see if we need to send a dummy packet to inform everyone in the network we want to send data.
+		// This is done when we are yielding only
+		if(serial_read_available() > 0 && transmit_yield && tdm_state != TDM_TRANSMIT)
+		{
+			pbuf[0] = 0xff;
+			len = 1;
+			trailer.command = 1;
+			nodeDestination = paramNodeDestination;
+			transmit_yield = false;
+		}
 		// ask the packet system for the next packet to send
 		// no data is to be sent during a sync period, the window is short
-		if (tdm_state != TDM_SYNC) {
+		else if (tdm_state != TDM_SYNC) {
 			if (send_at_command && max_xmit >= strlen(remote_at_cmd)) {
 				// send a remote AT command
 				len = strlen(remote_at_cmd);
@@ -816,6 +849,7 @@ tdm_serial_loop(void)
 			// mark a stats packet with a zero window
 			trailer.window = 0;
 			trailer.resend = 0;
+			trailer.command = 0;
 		} 
 		else if (tdm_state != TDM_TRANSMIT && len == 0 && !(tdm_state == TDM_SYNC && nodeId == BASE_NODEID)) {
 			continue; // If we have nothing contructive to send be quiet..
@@ -861,6 +895,10 @@ tdm_serial_loop(void)
 			else {
 				yielded_slot = false;
 			}
+		}
+		// If we are here we must have permission to send data
+		else if (tdm_state == TDM_RECEIVE) {
+			lastTransmitWindow &= 0x7FFF;
 		}
 #endif // USE_TICK_YIELD
 		
