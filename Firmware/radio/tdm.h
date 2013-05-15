@@ -41,6 +41,7 @@
 //#define DEBUG_PINS_YIELD // P2.6
 //#define DEBUG_PINS_SYNC  // P0.1
 //#define DEBUG_PINS_TRANSMIT_RECEIVE // P2.2
+//#define DEBUG_PINS_TX_RX_STATE // P2.3
 
 // Hard coded for the inital testing, need to figure out how this could be changed on the fly later down the track
 // Maybe a new command seprate from the AT? Without entering +++ mode? more thought needed

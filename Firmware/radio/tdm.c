@@ -234,6 +234,10 @@ tdm_state_update(__pdata uint16_t tdelta)
 
 	// have we passed the next transition point?
 	while (tdelta >= tdm_state_remaining) {
+#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
+		// Reset Watchdog
+		PCA0CPH5 = 0;
+#endif //_BOARD_RFD900A
 		if ((nodeTransmitSeq < 0x8000 || nodeId == BASE_NODEID) && (nodeTransmitSeq++ % nodeCount) == nodeId) {
 			tdm_state = TDM_TRANSMIT;
 			nodeTransmitSeq %= nodeCount;
@@ -546,7 +550,11 @@ tdm_serial_loop(void)
 		if (pdata_canary != 0x41) {
 			panic("pdata canary changed\n");
 		}
-
+#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
+		// Reset Watchdog
+		PCA0CPH5 = 0;
+#endif //_BOARD_RFD900A
+		
 		// give the AT command processor a chance to handle a command
 		at_command();
 
@@ -713,6 +721,9 @@ tdm_serial_loop(void)
 #ifdef DEBUG_PINS_TRANSMIT_RECEIVE
 		P2 |= 0x04;
 #endif // DEBUG_PINS_TRANSMIT_RECEIVE
+#ifdef DEBUG_PINS_TX_RX_STATE
+		P2 &= ~0x08;
+#endif // DEBUG_PINS_TX_RX_STATE
 #else // USE_TICK_YIELD
 		// If we arn't in transmit or our node id isn't BASE_NODEID and in tdm_sync
 		if (tdm_state != TDM_TRANSMIT) {
@@ -749,6 +760,11 @@ tdm_serial_loop(void)
 			continue;
 		}
 		
+#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
+		// Reset Watchdog
+		PCA0CPH5 = 0;
+#endif //_BOARD_RFD900A
+		
 		// Dont send anything until we have received 20 good sync bytes
 		if (nodeId != BASE_NODEID && sync_count < 20) {
 			continue;
@@ -784,18 +800,18 @@ tdm_serial_loop(void)
 #if USE_TICK_YIELD
 		// Check to see if we need to send a dummy packet to inform everyone in the network we want to send data.
 		// This is done when we are yielding only
-		if(serial_read_available() > 0 && transmit_yield && tdm_state != TDM_TRANSMIT)
+		if(serial_read_available() > 0 && transmit_yield && tdm_state == TDM_RECEIVE)
 		{
 			pbuf[0] = 0xff;
 			len = 1;
 			trailer.command = 1;
-			nodeDestination = paramNodeDestination;
-			transmit_yield = false;
+			// Broadcast Interupt flag
+			nodeDestination = 0xFFFF;
 		}
 		else
 #endif // USE_TICK_YIELD
 		// ask the packet system for the next packet to send
-		// no data is to be sent during a sync period, the window is short
+		// no data is to be sent during a sync period
 		if (tdm_state != TDM_SYNC) {
 			if (send_at_command && max_xmit >= strlen(remote_at_cmd)) {
 				// send a remote AT command
@@ -910,7 +926,21 @@ tdm_serial_loop(void)
 		// after sending a packet leave a bit of time before
 		// sending the next one. The receivers don't cope well
 		// with back to back packets
+#if USE_TICK_YIELD
+		if (transmit_yield && tdm_state == TDM_RECEIVE) {
+			transmit_yield = false;
+			transmit_wait = 2*packet_latency;
+#ifdef DEBUG_PINS_TX_RX_STATE
+			P2 |= 0x08;
+#endif // DEBUG_PINS_TX_RX_STATE
+		}
+		else
+		{
+			transmit_wait = packet_latency;
+		}
+#else
 		transmit_wait = packet_latency;
+#endif // USE_TICK_YIELD
 
 		// if we're implementing a duty cycle, add the
 		// transmit time to the number of ticks we've been transmitting
@@ -918,6 +948,11 @@ tdm_serial_loop(void)
 			transmitted_ticks += flight_time_estimate(len+sizeof(trailer));
 		}
 
+#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
+		// Reset Watchdog
+		PCA0CPH5 = 0;
+#endif //_BOARD_RFD900A
+		
 		// start transmitting the packet
 		if (!radio_transmit(len + sizeof(trailer), pbuf, nodeDestination, tdm_state_remaining + (silence_period/2)) &&
 		    len != 0 && trailer.window != 0 && trailer.command == 0) {
@@ -1120,7 +1155,7 @@ tdm_init(void)
 	silence_period = 4*packet_latency;
 
 	// set the transmit window to allow for 2 full sized packets
-	window_width = 2*(packet_latency+(max_data_packet_length*(uint32_t)ticks_per_byte)+silence_period);
+	window_width = 2*(packet_latency+(max_data_packet_length*(uint32_t)ticks_per_byte)+packet_latency) + silence_period;
 
 	// if LBT is enabled, we need at least 3*5ms of window width
 	if (lbt_rssi != 0) {
@@ -1141,8 +1176,8 @@ tdm_init(void)
 	
 	tx_window_width = window_width;
 	
-	// Window size of 2 statistic packets
-	window_width = 2*(packet_latency + ((sizeof(statistics) + sizeof(trailer))*(uint32_t)ticks_per_byte) + silence_period);
+	// Window size of 4 statistic packets
+	window_width = 4*(packet_latency + ((sizeof(trailer))*(uint32_t)ticks_per_byte)+packet_latency) + silence_period;
 	tx_sync_width = window_width;
 	
 	// now adjust the packet_latency for the actual preamble
