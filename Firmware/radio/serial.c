@@ -44,8 +44,10 @@
 // would be about 16x larger than the largest air packet if we have
 // 8 TDM time slots
 //
-__xdata uint8_t rx_buf[2048] = {0};
-__xdata uint8_t tx_buf[256] = {0}; //[512] = {0};
+#define RX_BUFF_MAX 2048
+#define TX_BUFF_MAX 256 // 512
+__xdata uint8_t rx_buf[RX_BUFF_MAX] = {0};
+__xdata uint8_t tx_buf[TX_BUFF_MAX] = {0};
 __pdata const uint16_t  rx_mask = sizeof(rx_buf) - 1;
 __pdata const uint16_t  tx_mask = sizeof(tx_buf) - 1;
 
@@ -91,8 +93,8 @@ static void serial_device_set_speed(register uint8_t speed);
 #define ES0_RESTORE ES0 = ES_saved
 
 // threshold for considering the rx buffer full
-#define SERIAL_CTS_THRESHOLD_LOW  17
-#define SERIAL_CTS_THRESHOLD_HIGH 34
+#define SERIAL_CTS_THRESHOLD_LOW  RX_BUFF_MAX/32
+#define SERIAL_CTS_THRESHOLD_HIGH RX_BUFF_MAX/2
 
 void
 serial_interrupt(void) __interrupt(INTERRUPT_UART0)
@@ -146,6 +148,11 @@ serial_interrupt(void) __interrupt(INTERRUPT_UART0)
 				return;
 			}
 #endif
+#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
+			// Reset Watchdog
+			PCA0CPH5 = 0;
+#endif //_BOARD_RFD900A
+			
 			// fetch and send a byte
 			BUF_REMOVE(tx, c);
 			SBUF0 = c;
