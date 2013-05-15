@@ -125,7 +125,15 @@ main(void)
 	if (!radio_receiver_on()) {
 		panic("failed to enable receiver");
 	}
-
+	
+#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
+	printf("Starting Watchdog\n");
+	// 0x40 = Enable Watchdog
+	PCA0MD |= 0x40;
+	// Reset Watchdog
+	PCA0CPH5 = 0;
+#endif // _BOARD_RFD900A
+	
 	tdm_serial_loop();
 }
 
@@ -228,7 +236,12 @@ hardware_init(void)
 
 #ifdef _BOARD_RFD900A
 	// PCA0, CEX0 setup and enable.
-	PCA0MD = 0x88;
+//	PCA0H
+	PCA0CPL5 = 0xFF; // 32.1ms WDT time out @ 24.5Mz System Clock
+	
+	// 0x08 = Use System clock
+	// 0x80 = PCA Counter is suspended when in Idle Mode.
+	PCA0MD = 0x80 | 0x08;
 	PCA0PWM = 0x00;
 	PCA0CPH0 = 0x80;
 	PCA0CPM0 = 0x42;
@@ -271,8 +284,8 @@ radio_init(void)
 	case FREQ_915:
 		freq_min = 915000000UL;
 		freq_max = 928000000UL;
-		txpower = 20;
-		num_fh_channels = MAX_FREQ_CHANNELS;
+		txpower = 27;
+			num_fh_channels = 20; //MAX_FREQ_CHANNELS;
 		break;
 	default:
 		freq_min = 0;

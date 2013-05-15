@@ -190,6 +190,10 @@ at_timer(void)
 				break;
 
 			case ATP_WAIT_FOR_ENABLE:
+#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
+					// 0x40 = Disable Watchdog
+					PCA0MD &= ~0x40;
+#endif // _BOARD_RFD900A
 				at_mode_active = true;
 				at_plus_state = ATP_WAIT_FOR_IDLE;
 
@@ -278,6 +282,11 @@ at_command(void)
 			case 'O':		// O -> go online (exit command mode)
 				at_plus_counter = ATP_COUNT_1S;
 				at_mode_active = 0;
+					
+#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
+					// 0x40 = Enable Watchdog
+					PCA0MD |= 0x40;
+#endif // _BOARD_RFD900A
 				break;
 			case 'S':
 				at_s();
@@ -333,15 +342,7 @@ at_i(void)
 		printf("[%u] %u\n", nodeId, g_board_bl_version);
 		return;
 	case '5': {
-		enum ParamID id;
-		// convenient way of showing all parameters
-		for (id = 0; id < PARAM_MAX; id++) {
-			printf("[%u] S%u: %s=%lu\n", 
-				   nodeId,
-			       (unsigned)id, 
-			       param_name(id), 
-			       (unsigned long)param_get(id));
-		}
+		param_list();
 		return;
 	}
 	case '6':
