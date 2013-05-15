@@ -342,6 +342,11 @@ radio_transmit_simple(__data uint8_t length, __xdata uint8_t * __pdata buf, __pd
 	while ((uint16_t)(timer2_tick() - tstart) < timeout_ticks) {
 		__data uint8_t status;
 
+#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
+		// Reset Watchdog
+		PCA0CPH5 = 0;
+#endif //_BOARD_RFD900A
+		
 		// see if we can put some more bytes into the FIFO
 		status = register_read(EZRADIOPRO_INTERRUPT_STATUS_1);
 		if (transmit_started && length != 0 && (status & EZRADIOPRO_ITXFFAEM)) {
