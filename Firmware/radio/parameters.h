@@ -100,7 +100,7 @@ extern param_t param_get(__data enum ParamID param);
 /// @return			The parameter ID, or PARAM_MAX if the
 ///				parameter is not known.
 ///
-extern enum ParamID param_id(__data char * __pdata name);
+//extern enum ParamID param_id(__data char * __pdata name);
 
 /// Return the name of a parameter.
 ///
@@ -125,6 +125,10 @@ extern void param_save(void);
 /// Note that this just resets - it does not save.
 ///
 extern void param_default(void);
+
+/// List current parameters
+///
+extern void param_list(void);
 
 /// convenient routine to constrain parameter values
 uint32_t constrain(__pdata uint32_t v, __pdata uint32_t min, __pdata uint32_t max);

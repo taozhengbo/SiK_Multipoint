@@ -53,19 +53,19 @@ __code const struct parameter_info {
 } parameter_info[PARAM_MAX] = {
 /*00*/  {"FORMAT",  PARAM_FORMAT_CURRENT},
 /*01*/  {"SERIAL_SPEED",  57}, // match APM default of 57600
-/*02*/  {"AIR_SPEED",  64}, // relies on MAVLink flow control
+/*02*/  {"AIR_SPEED",  128}, // relies on MAVLink flow control
 /*03*/  {"NETID",  25},
 /*04*/  {"TXPOWER",  0},
-/*05*/  {"ECC",  1},
-/*06*/  {"MAVLINK",  1},
-/*07*/  {"OPPRESEND",  1},
+/*05*/  {"ECC",  0},
+/*06*/  {"MAVLINK",  0},
+/*07*/  {"OPPRESEND",  0},
 /*08*/  {"MIN_FREQ",  0},
 /*09*/  {"MAX_FREQ",  0},
 /*10*/  {"NUM_CHANNELS",  0},
 /*11*/  {"DUTY_CYCLE",  100},
 /*12*/  {"LBT_RSSI",  0},
 /*13*/  {"MANCHESTER",  0},
-/*14*/  {"RTSCTS",  0},
+/*14*/  {"RTSCTS",  1},
 /*15*/  {"NODEID",  2}, // The base node is '1' lets make new nodes 2
 /*16*/  {"NODEDESTINATION", 65535},
 /*17*/  {"SYNCANY",  0}, // The amount of nodes in the network, this may could become auto discovery later.
@@ -287,20 +287,35 @@ param_default(void)
 	// set all parameters to their default values
 	for (i = 0; i < PARAM_MAX; i++) {
 		parameter_values[i] = parameter_info[i].default_value;
+		
 	}
 }
 
-enum ParamID
-param_id(__data char * __pdata name)
+void
+param_list(void)
 {
-	__pdata uint8_t i;
-
-	for (i = 0; i < PARAM_MAX; i++) {
-		if (!strcmp(name, parameter_info[i].name))
-			break;
+	__pdata uint8_t	id;
+	// convenient way of showing all parameters
+	for (id = 0; id < PARAM_MAX; id++) {
+		printf("[%u] S%u: %s=%lu\n", 
+			   nodeId,
+			   (unsigned)id, 
+			   parameter_info[id].name, 
+			   (unsigned long)parameter_values[id]);
 	}
-	return i;
 }
+
+//enum ParamID
+//param_id(__data char * __pdata name)
+//{
+//	__pdata uint8_t i;
+//
+//	for (i = 0; i < PARAM_MAX; i++) {
+//		if (!strcmp(name, parameter_info[i].name))
+//			break;
+//	}
+//	return i;
+//}
 
 const char *__code
 param_name(__data enum ParamID param)
