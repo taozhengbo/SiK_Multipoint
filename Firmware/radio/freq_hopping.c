@@ -42,17 +42,8 @@ __pdata uint8_t num_fh_channels;
 /// whether we current have good lock with the other end
 static bool have_radio_lock;
 
-/// current transmit channel
-/// This changes every time the TDM transmit window opens or closes,
-/// regardless of our lock state
-__pdata static volatile uint8_t transmit_channel;
-
-/// current receive channel
-/// When we have good lock with the other radio the receive channel
-/// follows the transmit channel. When we don't have lock the receive
-/// channel only changes
-/// very slowly - it moves only when the transmit channel wraps
-__pdata static volatile uint8_t receive_channel;
+/// current channel
+__pdata static volatile uint8_t fhop_channel;
 
 /// map between hopping channel numbers and physical channel numbers
 __xdata static uint8_t channel_map[MAX_FREQ_CHANNELS];
@@ -89,43 +80,39 @@ fhop_init(uint16_t netid)
 uint8_t 
 fhop_receive_channel(void)
 {
-	return channel_map[receive_channel];
+	return channel_map[fhop_channel];
 }
 
 // tell the TDM code what channel to transmit on
 uint8_t 
 fhop_sync_channel(void)
 {
-	return channel_map[SYNC_CHANNEL]; // Fixed sync channel
+	// Fixed sync channel
+	return channel_map[SYNC_CHANNEL % num_fh_channels];
 }
 
 // get the current transmit channel (NOT the map frequency)
 uint8_t
 get_transmit_channel(void)
 {
-	return transmit_channel;
+	return fhop_channel;
 }
 
 // set the current transmit channel (NOT the map frequency)
 void
 set_transmit_channel(uint8_t channel)
 {
-	transmit_channel = channel;
+	fhop_channel = channel;
 }
 
 // called when the transmit windows changes owner
 void 
 fhop_window_change(void)
 {
-	transmit_channel = (transmit_channel + 1) % num_fh_channels;
-	if (have_radio_lock) {
-		// when we have lock, the receive channel follows the
-		// transmit channel
-		receive_channel = transmit_channel;
-	}
-	else {
+	fhop_channel = (fhop_channel + 1) % num_fh_channels;
+	if (!have_radio_lock) {
 		// when we don't have lock, listen on the sync channel
-		receive_channel = SYNC_CHANNEL;
+		fhop_channel = SYNC_CHANNEL % num_fh_channels;
 		debug("Trying RCV on channel %d\n", (int)receive_channel);
 	}
 }

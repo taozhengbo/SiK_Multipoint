@@ -127,7 +127,6 @@ main(void)
 	}
 	
 #if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
-	printf("Starting Watchdog\n");
 	// 0x40 = Enable Watchdog
 	PCA0MD |= 0x40;
 	// Reset Watchdog

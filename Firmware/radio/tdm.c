@@ -234,10 +234,10 @@ tdm_state_update(__pdata uint16_t tdelta)
 
 	// have we passed the next transition point?
 	while (tdelta >= tdm_state_remaining) {
-#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
-		// Reset Watchdog
+#ifdef WATCH_DOG_ENABLE
+		// Tickle Watchdog
 		PCA0CPH5 = 0;
-#endif //_BOARD_RFD900A
+#endif // WATCH_DOG_ENABLE
 		if ((nodeTransmitSeq < 0x8000 || nodeId == BASE_NODEID) && (nodeTransmitSeq++ % nodeCount) == nodeId) {
 			tdm_state = TDM_TRANSMIT;
 			nodeTransmitSeq %= nodeCount;
@@ -542,10 +542,10 @@ tdm_serial_loop(void)
 		if (pdata_canary != 0x41) {
 			panic("pdata canary changed\n");
 		}
-#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
-		// Reset Watchdog
+#ifdef WATCH_DOG_ENABLE
+		// Throw the Watchdog a stick
 		PCA0CPH5 = 0;
-#endif //_BOARD_RFD900A
+#endif // WATCH_DOG_ENABLE
 		
 		// give the AT command processor a chance to handle a command
 		at_command();
@@ -602,9 +602,6 @@ tdm_serial_loop(void)
 				nodeTransmitSeq = 0;
 				set_transmit_channel(trailer.nodeid & 0x7FFF);
 				received_sync = true;
-#if USE_TICK_YIELD
-				tdm_yield_update(YIELD_SET, YIELD_DATA);
-#endif // USE_TICK_YIELD
 				continue;
 			}
 			// We dont want to sync off nodes sending bonus data
@@ -752,10 +749,10 @@ tdm_serial_loop(void)
 			continue;
 		}
 		
-#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
-		// Reset Watchdog
+#ifdef WATCH_DOG_ENABLE
+		// Pat the Watchdog
 		PCA0CPH5 = 0;
-#endif //_BOARD_RFD900A
+#endif // WATCH_DOG_ENABLE
 		
 		// Dont send anything until we have received 20 good sync bytes
 		if (nodeId != BASE_NODEID && sync_count < 20) {
@@ -940,10 +937,10 @@ tdm_serial_loop(void)
 			transmitted_ticks += flight_time_estimate(len+sizeof(trailer));
 		}
 
-#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
-		// Reset Watchdog
+#ifdef WATCH_DOG_ENABLE
+		// Feed Watchdog
 		PCA0CPH5 = 0;
-#endif //_BOARD_RFD900A
+#endif // WATCH_DOG_ENABLE
 		
 		// start transmitting the packet
 		if (!radio_transmit(len + sizeof(trailer), pbuf, nodeDestination, tdm_state_remaining) &&
@@ -1144,7 +1141,7 @@ tdm_init(void)
 	}
 
 	// set the silence period to between changing channels
-	silence_period = 4*packet_latency;
+	silence_period = 2*packet_latency;
 
 	// set the transmit window to allow for 2 full sized packets
 	window_width = 2*(packet_latency+(max_data_packet_length*(uint32_t)ticks_per_byte)+packet_latency) + silence_period;

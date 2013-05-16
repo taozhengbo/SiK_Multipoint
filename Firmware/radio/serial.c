@@ -101,6 +101,11 @@ serial_interrupt(void) __interrupt(INTERRUPT_UART0)
 {
 	register uint8_t	c;
 
+#ifdef WATCH_DOG_ENABLE
+	// Tickle Watchdog
+	PCA0CPH5 = 0;
+#endif //WATCH_DOG_ENABLE
+	
 	// check for received byte first
 	if (RI0) {
 		// acknowledge interrupt and fetch the byte immediately
@@ -148,11 +153,6 @@ serial_interrupt(void) __interrupt(INTERRUPT_UART0)
 				return;
 			}
 #endif
-#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
-			// Reset Watchdog
-			PCA0CPH5 = 0;
-#endif //_BOARD_RFD900A
-			
 			// fetch and send a byte
 			BUF_REMOVE(tx, c);
 			SBUF0 = c;
