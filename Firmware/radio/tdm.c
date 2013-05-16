@@ -288,6 +288,13 @@ tdm_state_update(__pdata uint16_t tdelta)
 		transmit_wait = 0;
 	}
 
+	// set right receive channel
+	if (tdm_state == TDM_SYNC) {
+		radio_set_channel(fhop_sync_channel());
+	} else {
+		radio_set_channel(fhop_receive_channel());
+	}
+	
 	tdm_state_remaining -= tdelta;
 }
 
@@ -377,23 +384,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 	}
 	return YIELD_TRANSMIT;	
 }
-#endif // USE_TICK_YIELD 
-
-/// change tdm phase
-///
-void
-tdm_change_phase(void)
-{	
-	if ((nodeTransmitSeq < 0x8000 || nodeId == BASE_NODEID) && (nodeTransmitSeq++ % nodeCount) == nodeId) {
-		tdm_state = TDM_TRANSMIT;
-	}
-	else if (nodeTransmitSeq < 0x8000 && (nodeTransmitSeq-1 % nodeCount) == nodeCount-1) {
-		tdm_state = TDM_SYNC;
-	}
-	else {
-		tdm_state = TDM_RECEIVE; // If there are other nodes yet to transmit lets hear them first
-	}
-}
+#endif // USE_TICK_YIELD
 
 /// called to check temperature
 ///
@@ -461,6 +452,7 @@ link_update(void)
 		}
 		else {
 			fhop_set_locked(false); // Set channel back to sync and try again
+			radio_set_channel(fhop_sync_channel());
 		}
 	}
 
@@ -567,13 +559,6 @@ tdm_serial_loop(void)
 		if (seen_mavlink && feature_mavlink_framing && !at_mode_active) {
 			seen_mavlink = false;
 			MAVLink_report();
-		}
-
-		// set right receive channel
-		if (tdm_state == TDM_SYNC) {
-			radio_set_channel(fhop_sync_channel());
-		} else {
-			radio_set_channel(fhop_receive_channel());
 		}
 
 		// get the time before we check for a packet coming in
@@ -686,6 +671,13 @@ tdm_serial_loop(void)
 		tdm_state_update(tdelta);
 		last_t = tnow;
 
+		// wait for the silence period to expire, to allow radio's to switch channel
+		if( (tdm_state_remaining > tx_window_width-silence_period) ||
+		    (tdm_state == TDM_SYNC && tdm_state_remaining > tx_sync_width-silence_period))
+		{
+			continue;
+		}
+		
 		// update link status approximately every 0.5s
 		if (tnow - last_link_update > 32768) {
 			link_update();
@@ -782,12 +774,12 @@ tdm_serial_loop(void)
 
 		// how many bytes could we transmit in the time we
 		// have left?
-		if (tdm_state_remaining < (packet_latency + silence_period)) {
+		if (tdm_state_remaining < packet_latency) {
 			// none ....
 			continue;
 		}
 		
-		max_xmit = (tdm_state_remaining - packet_latency - silence_period) / ticks_per_byte;
+		max_xmit = (tdm_state_remaining - packet_latency) / ticks_per_byte;
 		if (max_xmit < sizeof(trailer)+1) {
 			// can't fit the trailer in with a byte to spare
 			continue;
@@ -954,7 +946,7 @@ tdm_serial_loop(void)
 #endif //_BOARD_RFD900A
 		
 		// start transmitting the packet
-		if (!radio_transmit(len + sizeof(trailer), pbuf, nodeDestination, tdm_state_remaining + (silence_period/2)) &&
+		if (!radio_transmit(len + sizeof(trailer), pbuf, nodeDestination, tdm_state_remaining) &&
 		    len != 0 && trailer.window != 0 && trailer.command == 0) {
 			packet_force_resend();
 		}
@@ -1151,7 +1143,7 @@ tdm_init(void)
 		max_data_packet_length = MAX_PACKET_LENGTH - sizeof(trailer);
 	}
 
-	// set the silence period between packets to four times the packet latency
+	// set the silence period to between changing channels
 	silence_period = 4*packet_latency;
 
 	// set the transmit window to allow for 2 full sized packets

@@ -42,12 +42,6 @@
 /// @param netid	Our assigned network ID.
 extern void fhop_init(uint16_t netid);
 
-/// tell the TDM code what channel to transmit on
-///
-/// @return		The channel that we should be transmitting on.
-///
-extern uint8_t fhop_transmit_channel(void);
-
 /// tell the TDM code what channel to receive on
 ///
 /// @return		The channel that we should be receiving on.

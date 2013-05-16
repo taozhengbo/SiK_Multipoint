@@ -44,8 +44,8 @@
 // would be about 16x larger than the largest air packet if we have
 // 8 TDM time slots
 //
-#define RX_BUFF_MAX 2048
-#define TX_BUFF_MAX 256 // 512
+#define RX_BUFF_MAX 1024 //2048
+#define TX_BUFF_MAX 512 //256 // 512
 __xdata uint8_t rx_buf[RX_BUFF_MAX] = {0};
 __xdata uint8_t tx_buf[TX_BUFF_MAX] = {0};
 __pdata const uint16_t  rx_mask = sizeof(rx_buf) - 1;

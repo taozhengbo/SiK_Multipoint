@@ -69,9 +69,6 @@ extern void tdm_report_timing(void);
 /// dispatch a remote AT command
 extern void tdm_remote_at(__pdata uint16_t destination);
 
-/// change tdm phase (for testing recovery)
-extern void tdm_change_phase(void);
-
 /// show RSSI information
 extern void tdm_show_rssi(void);
 

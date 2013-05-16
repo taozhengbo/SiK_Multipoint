@@ -85,13 +85,6 @@ fhop_init(uint16_t netid)
 	shuffle(channel_map, num_fh_channels);
 }
 
-// tell the TDM code what channel to transmit on
-uint8_t 
-fhop_transmit_channel(void)
-{
-	return channel_map[transmit_channel];
-}
-
 // tell the TDM code what channel to receive on
 uint8_t 
 fhop_receive_channel(void)

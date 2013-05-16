@@ -415,10 +415,6 @@ at_ampersand(void)
 		at_error();
 		break;
 
-	case 'P':
-		tdm_change_phase();
-		break;
-
 	case 'T':
 		// enable test modes
 		if (!strcmp(at_cmd + 4, "")) {
