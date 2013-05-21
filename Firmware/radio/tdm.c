@@ -242,6 +242,8 @@ tdm_state_update(__pdata uint16_t tdelta)
 			tdm_state = TDM_TRANSMIT;
 			nodeTransmitSeq %= nodeCount;
 		}
+		// We need to -1 from nodeTransmitSeq as it was incremented above
+		// Remember we have incremented nodeCount to allow for the sync period
 		else if (nodeTransmitSeq < 0x8000 && (nodeTransmitSeq-1 % nodeCount) == nodeCount-1) {
 			tdm_state = TDM_SYNC;
 		}
@@ -776,9 +778,16 @@ tdm_serial_loop(void)
 			continue;
 		}
 		
-		max_xmit = (tdm_state_remaining - packet_latency) / ticks_per_byte;
+		// leave 1 packet_latency at the end of the transmit and another at the end of the sequence
+		if((signed) tdm_state_remaining - 2*(signed)packet_latency < 0) {
+			max_xmit = 0;
+		}
+		else {
+			max_xmit = (tdm_state_remaining - 2*packet_latency) / ticks_per_byte;
+		}
 		if (max_xmit < sizeof(trailer)+1) {
 			// can't fit the trailer in with a byte to spare
+			
 			continue;
 		}
 		max_xmit -= sizeof(trailer)+1;
@@ -1144,7 +1153,7 @@ tdm_init(void)
 	silence_period = 2*packet_latency;
 
 	// set the transmit window to allow for 2 full sized packets
-	window_width = 2*(packet_latency+(max_data_packet_length*(uint32_t)ticks_per_byte)+packet_latency) + silence_period;
+	window_width = 2*((max_data_packet_length*(uint32_t)ticks_per_byte)+packet_latency) + silence_period + packet_latency;
 
 	// if LBT is enabled, we need at least 3*5ms of window width
 	if (lbt_rssi != 0) {
@@ -1166,7 +1175,7 @@ tdm_init(void)
 	tx_window_width = window_width;
 	
 	// Window size of 4 statistic packets
-	window_width = 4*(packet_latency + ((sizeof(trailer))*(uint32_t)ticks_per_byte)+packet_latency) + silence_period;
+	window_width = 4*(((sizeof(trailer))*(uint32_t)ticks_per_byte)+packet_latency) + silence_period + packet_latency;
 	tx_sync_width = window_width;
 	
 	// now adjust the packet_latency for the actual preamble
