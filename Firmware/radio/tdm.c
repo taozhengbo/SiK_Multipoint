@@ -312,6 +312,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 			return YIELD_TRANSMIT;
 		}
 		else {
+			lastTransmitWindow = nodeId | 0x8000;
 			return YIELD_RECEIVE;
 		}
 	}
@@ -325,8 +326,10 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 		}
 		
 		// REMEMBER nodeCount is set one higher than the user has set, this is to add sync to the sequence
+		// nodeTransmitSeq points to the next slot so we also have to remove one from here
 		if(!set_yield) {
-			if((lastTransmitWindow & 0x7FFF) == ((nodeTransmitSeq-1) % (nodeCount-1))) {
+			if((nodeTransmitSeq != 0 && (lastTransmitWindow & 0x7FFF) == ((nodeTransmitSeq-1) % (nodeCount-1))) || 
+			   (nodeTransmitSeq == 0 && (lastTransmitWindow & 0x7FFF) == (nodeCount-2)) ) {
 				return YIELD_TRANSMIT;
 			}
 			else {
@@ -800,6 +803,11 @@ tdm_serial_loop(void)
 		// This is done when we are yielding only
 		if(serial_read_available() > 0 && transmit_yield && tdm_state == TDM_RECEIVE)
 		{
+			// if more than 1/4 of the slot is passed it wouldn't be worth transmitting in this slot
+			if(tdm_state_remaining < tx_window_width/4) {
+				continue;
+			}
+			   
 			pbuf[0] = 0xff;
 			len = 1;
 			trailer.command = 1;
