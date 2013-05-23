@@ -350,7 +350,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 			// Ensure that other nodes get a chance to respond before we take their slot.
 			else {
 				lastTransmitWindow = trailer.nodeid | 0x8000;
-				transmit_wait = packet_latency*2;
+				transmit_wait = packet_latency*nodeId; // + (rand() % nodeId);
 			}
 		}
 		// Change the Window so we don't send any data without politely asking first
@@ -370,7 +370,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 		
 		if(yielded_slot) {
 			// Change the Window so we don't send any data without politely asking first
-			lastTransmitWindow = 0x8000;
+			lastTransmitWindow = nodeId | 0x8000;
 		}
 		else {
 			lastTransmitWindow = nodeId;
