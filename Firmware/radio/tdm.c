@@ -350,7 +350,8 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 			// Ensure that other nodes get a chance to respond before we take their slot.
 			else {
 				lastTransmitWindow = trailer.nodeid | 0x8000;
-				transmit_wait = packet_latency*nodeId; // + (rand() % nodeId);
+				// This gives prefrance to a lower nodeId, need to think of a better way of yielding a slot
+				transmit_wait = packet_latency*nodeId;
 			}
 		}
 		// Change the Window so we don't send any data without politely asking first
@@ -506,11 +507,16 @@ handle_at_command(__pdata uint8_t len)
 	
 	// setup the command in the at_cmd buffer
 	memcpy(at_cmd, pbuf, len);
-	at_cmd[len] = 0;
+	at_cmd[len] = '\0';
 	at_cmd[0] = 'A'; // replace 'R'
 	at_cmd_len = len;
 	at_cmd_ready = true;
 
+#ifdef WATCH_DOG_ENABLE
+	// Pat the Watchdog
+	PCA0CPH5 = 0;
+#endif // WATCH_DOG_ENABLE
+	
 	// run the AT command, capturing any output to the packet
 	// buffer
 	// this reply buffer will be sent at the next opportunity
@@ -520,6 +526,11 @@ handle_at_command(__pdata uint8_t len)
 	if (len > 0) {
 		packet_inject(pbuf, len);
 	}
+	
+#ifdef WATCH_DOG_ENABLE
+	// Pat the Watchdog
+	PCA0CPH5 = 0;
+#endif // WATCH_DOG_ENABLE
 }
 
 // a stack carary to detect a stack overflow
@@ -961,7 +972,7 @@ tdm_serial_loop(void)
 		
 		// start transmitting the packet
 		if (!radio_transmit(len + sizeof(trailer), pbuf, nodeDestination, tdm_state_remaining) &&
-		    len != 0 && trailer.window != 0 && trailer.command == 0) {
+		    len != 0) { // && trailer.window != 0 && trailer.command == 0) {
 			packet_force_resend();
 		}
 
