@@ -28,4 +28,6 @@
 #
 # Configuration options for the RFD900u board.
 #
-FREQUENCIES			= 915
+FREQUENCIES			 = 915
+LDFLAGS				+= --model-large --iram-size 256 --xram-size 4096 --code-loc 0x400 --code-size 0x00f400 --stack-size 64
+BOOTLDFLAGS			 = --iram-size 256 --xram-size 4096 --stack-size 64 --nostdlib -Wl -bHIGHCSEG=0xf800
