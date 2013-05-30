@@ -65,7 +65,7 @@
 #include <compiler_defs.h>
 #include <Si1020_defs.h>
 
-#define BOARD_ID	  0x41
+#define BOARD_ID	  0x44
 #define BOARD_NAME	"RFD900U"
 
 #define BOARD_MINTXPOWER 0		// Minimum transmit power level

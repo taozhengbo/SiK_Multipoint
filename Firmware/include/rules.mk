@@ -115,6 +115,7 @@ install:	$(PRODUCT_INSTALL)
 	@echo INSTALL $^
 	$(v)mkdir -p $(DSTROOT)
 	$(v)cp $(PRODUCT_INSTALL) $(DSTROOT)/
+	@./tools/check_code.py $(BOARD) $(XRAM_SIZE)
 
 #
 # Dependencies
