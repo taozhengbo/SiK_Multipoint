@@ -44,8 +44,13 @@
 #define FLASH_PAGE_SIZE		0x0400		// 1KiB
 #define FLASH_PAGE_SHIFT	10
 #define FLASH_APP_START		0x0400		// 1 page reserved for bootloader
-#define FLASH_INFO_PAGE		0xf800		// 1 page reserved for bootloader
-#define FLASH_LOCK_BYTE		0xfbff
+#ifdef BOARD_rfd900u
+#define FLASH_INFO_PAGE     0x1F800     // 1 page reserved for bootloader
+#define FLASH_LOCK_BYTE		0x1FBFF
+#else
+#define FLASH_INFO_PAGE		0xF800		// 1 page reserved for bootloader
+#define FLASH_LOCK_BYTE		0xFBFF
+#endif // BOARD_rfd900u
 
 // Anticipated flash signature bytes
 //
