@@ -35,7 +35,6 @@
 ///
 
 #include <compiler_defs.h>
-#include <Si1000_defs.h>
 #include <stdio.h>
 #include <stdint.h>
 

@@ -892,7 +892,7 @@ radio_configure(__pdata uint8_t air_rate)
 	#define NUM_POWER_LEVELS 5
 	__code static const uint8_t power_levels[NUM_POWER_LEVELS] = { 17, 20, 27, 29, 30 };
 #endif
-#ifdef _BOARD_RFD900A
+#if defined _BOARD_RFD900A || defined _BOARD_RFD900U
 	#define NUM_POWER_LEVELS 16
 	#define POWER_LEVEL_STEP 2
 	// the power_levels array define 8 bit PWM values for each respective power level starting at 0dBm

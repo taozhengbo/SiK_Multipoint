@@ -33,11 +33,11 @@
 ///
 
 #include <compiler_defs.h>
-#include <Si1000_defs.h>
 #include <board_info.h>
 
 #include <stdint.h>
 
+#include "board.h"
 #include "flash.h"
 #include "util.h"
 
