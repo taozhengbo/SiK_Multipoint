@@ -146,6 +146,8 @@ __pdata uint8_t test_display;
 __pdata uint16_t statistics_receive_count;
 // set to 0 when we should send statistics packets
 __pdata uint16_t statistics_transmit_stats;
+// handle ati5 command, as this is a long and doesn't fit into the buffer
+__pdata uint8_t ati5_id;
 
 /// set when we should send a MAVLink report pkt
 extern bool seen_mavlink;
@@ -486,14 +488,26 @@ tdm_remote_at(__pdata uint16_t destination)
 	send_at_command_to = destination;
 	send_at_command = true;
 }
+static void ati5_proccess_packet(__pdata uint8_t len)
+{
+	if (ati5_id < PARAM_MAX) {
+		printf_start_capture(pbuf, sizeof(pbuf));
+		param_print(ati5_id);
+		len = printf_end_capture();
+		if (len > 0) {
+			packet_inject(pbuf, len);
+		}
+	}
+	ati5_id++;
+}
 
 // handle an incoming at command from the remote radio
 static void
 handle_at_command(__pdata uint8_t len)
 {
 	if (len < 2 || len > AT_CMD_MAXLEN || 
-	    pbuf[0] != (uint8_t)'R' || 
-	    pbuf[1] != (uint8_t)'T') {
+		pbuf[0] != (uint8_t)'R' || 
+		pbuf[1] != (uint8_t)'T') {
 		// assume its an AT command reply
 		register uint8_t i;
 		for (i=0; i<len; i++) {
@@ -510,21 +524,27 @@ handle_at_command(__pdata uint8_t len)
 	at_cmd[len] = '\0';
 	at_cmd[0] = 'A'; // replace 'R'
 	at_cmd_len = len;
-	at_cmd_ready = true;
 
 #ifdef WATCH_DOG_ENABLE
 	// Pat the Watchdog
 	PCA0CPH5 = 0;
 #endif // WATCH_DOG_ENABLE
 	
-	// run the AT command, capturing any output to the packet
-	// buffer
-	// this reply buffer will be sent at the next opportunity
-	printf_start_capture(pbuf, sizeof(pbuf));
-	at_command();
-	len = printf_end_capture();
-	if (len > 0) {
-		packet_inject(pbuf, len);
+	// Capture ATI5 and proccess separatly
+	if(len == 4 && at_cmd[2] == (uint8_t)'I' && at_cmd[3] == (uint8_t)'5'){
+		ati5_id=0;
+		ati5_proccess_packet(len);
+	}
+	else {
+		// run the AT command, capturing any output to the packet buffer
+		// this reply buffer will be sent at the next opportunity
+		at_cmd_ready = true;
+		printf_start_capture(pbuf, sizeof(pbuf));
+		at_command();
+		len = printf_end_capture();
+		if (len > 0) {
+			packet_inject(pbuf, len);
+		}
 	}
 	
 #ifdef WATCH_DOG_ENABLE
@@ -818,7 +838,7 @@ tdm_serial_loop(void)
 			if(tdm_state_remaining < tx_window_width/4) {
 				continue;
 			}
-			   
+			
 			pbuf[0] = 0xff;
 			len = 1;
 			trailer.command = 1;
@@ -971,11 +991,14 @@ tdm_serial_loop(void)
 #endif // WATCH_DOG_ENABLE
 		
 		// start transmitting the packet
-		if (!radio_transmit(len + sizeof(trailer), pbuf, nodeDestination, tdm_state_remaining) &&
-		    len != 0) { // && trailer.window != 0 && trailer.command == 0) {
+		if (!radio_transmit(len + sizeof(trailer), pbuf, nodeDestination, tdm_state_remaining) && len != 0) {
 			packet_force_resend();
 		}
 
+		if (ati5_id < PARAM_MAX) {
+			ati5_proccess_packet(len);
+		}
+		
 		if (lbt_rssi != 0) {
 			// reset the LBT listen time
 			lbt_listen_time = 0;
@@ -1222,6 +1245,8 @@ tdm_init(void)
 	
 	// golay_test();
 
+	ati5_id = PARAM_MAX;
+	
 #if USE_TICK_YIELD
 	received_packet = false;
 #ifdef DEBUG_PINS_YIELD

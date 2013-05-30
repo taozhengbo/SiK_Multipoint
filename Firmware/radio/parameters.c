@@ -292,30 +292,16 @@ param_default(void)
 }
 
 void
-param_list(void)
+param_print(__data uint8_t	id)
 {
-	__pdata uint8_t	id;
-	// convenient way of showing all parameters
-	for (id = 0; id < PARAM_MAX; id++) {
+	if (id < PARAM_MAX) {
 		printf("[%u] S%u: %s=%lu\n", 
-			   nodeId,
-			   (unsigned)id, 
-			   parameter_info[id].name, 
-			   (unsigned long)parameter_values[id]);
+			nodeId,
+			(unsigned)id, 
+			parameter_info[id].name, 
+			(unsigned long)parameter_values[id]);
 	}
 }
-
-//enum ParamID
-//param_id(__data char * __pdata name)
-//{
-//	__pdata uint8_t i;
-//
-//	for (i = 0; i < PARAM_MAX; i++) {
-//		if (!strcmp(name, parameter_info[i].name))
-//			break;
-//	}
-//	return i;
-//}
 
 const char *__code
 param_name(__data enum ParamID param)

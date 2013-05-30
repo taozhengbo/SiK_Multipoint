@@ -126,9 +126,9 @@ extern void param_save(void);
 ///
 extern void param_default(void);
 
-/// List current parameters
+/// List current parameter
 ///
-extern void param_list(void);
+extern void param_print(__data uint8_t id);
 
 /// convenient routine to constrain parameter values
 uint32_t constrain(__pdata uint32_t v, __pdata uint32_t min, __pdata uint32_t max);

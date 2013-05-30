@@ -324,6 +324,7 @@ at_error(void)
 static void
 at_i(void)
 {
+	__pdata uint8_t	id;
 	switch (at_cmd[3]) {
 	case '\0':
 	case '0':
@@ -342,7 +343,9 @@ at_i(void)
 		printf("[%u] %u\n", nodeId, g_board_bl_version);
 		return;
 	case '5': {
-		param_list();
+		for (id = 0; id < PARAM_MAX; id++) {
+			param_print(id);
+		}
 		return;
 	}
 	case '6':
