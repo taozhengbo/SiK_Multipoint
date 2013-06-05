@@ -60,7 +60,7 @@ __at(FLASH_SIGNATURE_BYTES) __code uint8_t flash_signature[2];
 /// combined this means that the bootloader code cannot be overwritten.
 /// RFD900A locks the bootloader as a separate step after calibration instead.
 ///
-#ifndef BOARD_rfd900a
+#if !defined BOARD_rfd900a && !defined BOARD_rfd900u
 __at(FLASH_LOCK_BYTE) __code uint8_t flash_lock_byte = 0xfe;
 #endif
 
@@ -139,7 +139,7 @@ flash_read_byte(uint16_t address)
 	return *(uint8_t __code *)address;
 }
 
-#ifdef BOARD_rfd900a
+#if defined BOARD_rfd900a || defined BOARD_rfd900u
 __at(FLASH_CALIBRATION_AREA_HIGH) uint8_t __code calibration[FLASH_CALIBRATION_AREA_SIZE];
 __at(FLASH_CALIBRATION_CRC_HIGH) uint8_t __code calibration_crc;
 
@@ -179,4 +179,4 @@ flash_transfer_calibration()
 	}
 	flash_write_byte(FLASH_CALIBRATION_CRC, calibration_crc);
 }
-#endif //BOARD_rfd900a
+#endif //BOARD_rfd900a/u
