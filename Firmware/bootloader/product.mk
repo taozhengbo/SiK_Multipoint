@@ -41,6 +41,8 @@ CFLAGS		+=	--model-small --no-xinit-opt --opt-code-size --Werror
 #
 CSEG_LIMIT	 =	$(shell printf %d 0x0400)	# start of application space
 HIGHCSEG_LIMIT	 =	$(shell printf %d 0xfbdc)	# room for 32 calibration and four patch bytes at the end
+HIGHCSEG_BANK_LIMIT	 =	$(shell printf %d 0x3FC00)	# room for 32 calibration and four patch bytes at the end
+PRODUCT_SUPPORT_BANKING = 0
 
 include $(SRCROOT)/include/rules.mk
 
@@ -73,4 +75,8 @@ sizecheck:	highcseg_end  = $(shell expr $(highcseg_base) + $(highcseg_size))
 sizecheck:	$(PRODUCT_HEX)
 	@echo SIZECHECK $<: CSEG $(cseg_size) HIGHCSEG $(highcseg_size)
 	$(v)test $(cseg_end)     -lt $(CSEG_LIMIT)     || (echo error: CSEG too large; exit 1)
+ifeq ($(HAVE_BANKING), 1)
+	$(v)test $(highcseg_end) -lt $(HIGHCSEG_BANK_LIMIT) || (echo error: HIGHCSEG too large; exit 1)
+else
 	$(v)test $(highcseg_end) -lt $(HIGHCSEG_LIMIT) || (echo error: HIGHCSEG too large; exit 1)
+endif

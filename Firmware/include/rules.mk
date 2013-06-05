@@ -40,6 +40,17 @@ endif
 #
 include $(SRCROOT)/include/rules_$(BOARD).mk
 
+HB=$(if $(filter $(HAVE_BANKING),1),1,0)
+BS=$(if $(filter $(PRODUCT_SUPPORT_BANKING),1),1,0)
+MODEL_HUGE=$(if $(filter $(HB),1),$(BS),0)
+
+ifeq ($(MODEL_HUGE), 1)
+	OFFSET_FIRMWARE=1
+	CFLAG_MODEL			 = --model-huge
+else
+	CFLAG_MODEL			 = --model-large
+endif
+
 #
 # Common build options.
 #
@@ -66,6 +77,7 @@ endif
 CC		 =	sdcc -mmcs51
 AS		 =	sdas8051 -jloscp
 LD		 =	sdcc
+BANK_ALLOC	 =	./tools/bank-alloc.py
 INCLUDES	 =	$(SRCROOT)/include
 CFLAGS		+=	$(addprefix -I,$(INCLUDES))
 DEPFLAGS	 =	-MM $(CFLAGS)
@@ -97,10 +109,15 @@ $(PRODUCT_HEX):	$(OBJS)
 	$(v)$(LD) -o $@ $(LDFLAGS) $(OBJS)
 
 $(OBJROOT)/%.rel: $(PRODUCT_DIR)/%.c
-	@echo CC $<
 	@mkdir -p $(dir $@)
 	$(v)(/bin/echo -n $(OBJROOT)/ && $(CC) $(DEPFLAGS) $<) > $(subst .rel,.dep,$@)
+ifeq ($(MODEL_HUGE), 1)
+	@echo CC $(shell $(BANK_ALLOC) $< $(PRODUCT_DIR)/segment.rules) $<
+	$(v)$(CC) -c -o $@ $(CFLAGS) --codeseg $(shell $(BANK_ALLOC) $< $(PRODUCT_DIR)/segment.rules) $<
+else
+	@echo CC $<
 	$(v)$(CC) -c -o $@ $(CFLAGS) $<
+endif
 
 $(OBJROOT)/%.rel: $(PRODUCT_DIR)/%.asm
 	@echo AS $<
@@ -110,12 +127,16 @@ $(OBJROOT)/%.rel: $(PRODUCT_DIR)/%.asm
 
 clean:
 	$(v)rm -rf $(OBJROOT)
+	
 
 install:	$(PRODUCT_INSTALL)
 	@echo INSTALL $^
 	$(v)mkdir -p $(DSTROOT)
 	$(v)cp $(PRODUCT_INSTALL) $(DSTROOT)/
-	@./tools/check_code.py $(BOARD) $(XRAM_SIZE)
+	@./tools/check_code.py $^ $(XRAM_SIZE)
+ifeq ($(MODEL_HUGE), 1)
+	@$(BANK_ALLOC) $(OBJROOT)/$(PRODUCT) $(PRODUCT_DIR)/segment.rules
+endif
 
 #
 # Dependencies

@@ -4,7 +4,7 @@ check the radio code for prototype consistency
 Andrew Tridgell, February 2012
 '''
 
-import re, glob, sys
+import re, glob, sys, os
 
 header_protos = {}
 code_protos = {}
@@ -26,7 +26,7 @@ if int(sys.argv[2]) < 4096:
 	print("ERROR: xram invalid")
 	sys.exit(1)
 
-board     = sys.argv[1]
+board     = sys.argv[1].split('.')[0]
 xram_size = int(sys.argv[2])
 
 
@@ -62,7 +62,7 @@ def check_xiseg():
     '''check that XISEG has not overflowed'''
     global error_count
     xmatch = re.compile(r'^XISEG\s*(\w+)\s*(\w+)');
-    for map in glob.glob("obj/%s/radio*/*map"%board):
+    for map in glob.glob("%s.map"%board):
         f = open(map)
         for line in f:
             m = xmatch.match(line)
@@ -73,6 +73,7 @@ def check_xiseg():
                     print('ERROR: XISEG overflow %u in %s' % (ofs1+ofs2, map))
                     error_count += 1
                 else:
+                    print os.popen("tail -n5 %s.mem"%board).read()
                     print('XISEG %s - %u bytes available' % (map, xram_size-(ofs1+ofs2)))
 
 
