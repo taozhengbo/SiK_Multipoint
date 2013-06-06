@@ -17,13 +17,26 @@
 
 # Files with ISRs must be in HOME
 HOME main.c
+HOME timer.c
+HOME tdm.c
+HOME radio.c
+HOME serial.c
+
+#rtc.c
+
 #BANK1
+BANK1 printfl.c
 BANK1 packet.c
+BANK1 freq_hopping.c
 
 #BANK2
 BANK2 mavlink.c
 
 #BANK3
-BANK3 flash.c
 BANK3 at.c
 BANK3 golay.c
+BANK3 parameters.c
+BANK3 crc.c
+
+# Flash MUST be in bank3 as it needs to read the end of this page
+BANK3 flash.c

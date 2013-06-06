@@ -46,9 +46,9 @@ MODEL_HUGE=$(if $(filter $(HB),1),$(BS),0)
 
 ifeq ($(MODEL_HUGE), 1)
 	OFFSET_FIRMWARE=1
-	CFLAG_MODEL			 = --model-huge
+	CFLAG_MODEL			 = --model-huge --stack-auto
 else
-	CFLAG_MODEL			 = --model-large
+	CFLAG_MODEL			 = --model-large --stack-auto
 endif
 
 #
@@ -106,17 +106,26 @@ build:	$(PRODUCT_HEX)
 $(PRODUCT_HEX):	$(OBJS)
 	@echo LD $@
 	@mkdir -p $(dir $@)
-	$(v)$(LD) -o $@ $(LDFLAGS) $(OBJS)
+ifeq ($(MODEL_HUGE), 1)
+	$(LD) $(LDFLAGS) -Wl-bBANK1=0x018000 -Wl-r -o $@ $(OBJS)
+	$(BANK_ALLOC) $(OBJROOT)/$(PRODUCT) $(PRODUCT_DIR)/segment.rules
+	@rm $@
+	@cat $(OBJROOT)/$(PRODUCT).flags
+	@echo LD $@
+	$(LD) -o $@ $(LDFLAGS) $(shell cat $(OBJROOT)/$(PRODUCT).flags) -Wl-r $(OBJS)
+else
+	$(LD) $(LDFLAGS) -o $@ $(OBJS)
+endif
 
 $(OBJROOT)/%.rel: $(PRODUCT_DIR)/%.c
 	@mkdir -p $(dir $@)
 	$(v)(/bin/echo -n $(OBJROOT)/ && $(CC) $(DEPFLAGS) $<) > $(subst .rel,.dep,$@)
 ifeq ($(MODEL_HUGE), 1)
-	@echo CC $(shell $(BANK_ALLOC) $< $(PRODUCT_DIR)/segment.rules) $<
-	$(v)$(CC) -c -o $@ $(CFLAGS) --codeseg $(shell $(BANK_ALLOC) $< $(PRODUCT_DIR)/segment.rules) $<
+	@/bin/echo CC $(shell $(BANK_ALLOC) $< $(PRODUCT_DIR)/segment.rules $@) $<
+	$(v)$(CC) --codeseg $(shell $(BANK_ALLOC) $< $(PRODUCT_DIR)/segment.rules $@) $(CFLAGS) -c $< -o $@
 else
 	@echo CC $<
-	$(v)$(CC) -c -o $@ $(CFLAGS) $<
+	$(CC) -c -o $@ $(CFLAGS) $<
 endif
 
 $(OBJROOT)/%.rel: $(PRODUCT_DIR)/%.asm
@@ -134,9 +143,6 @@ install:	$(PRODUCT_INSTALL)
 	$(v)mkdir -p $(DSTROOT)
 	$(v)cp $(PRODUCT_INSTALL) $(DSTROOT)/
 	@./tools/check_code.py $^ $(XRAM_SIZE)
-ifeq ($(MODEL_HUGE), 1)
-	@$(BANK_ALLOC) $(OBJROOT)/$(PRODUCT) $(PRODUCT_DIR)/segment.rules
-endif
 
 #
 # Dependencies

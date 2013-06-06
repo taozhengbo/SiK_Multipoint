@@ -52,13 +52,20 @@ def retrieve_module_size(file_name):
 
 # Searches for a code segment rule for file_name in the segment_rules file
 # If there is a rule, we respect it. Otherwise, we can move the file around
-def get_source_seg(source_file, segment_rules):
+def get_source_seg(source_file, object_file, segment_rules):
 	for line in open(segment_rules):
 		tokens = line.split(None)
 		if len(tokens) < 2:
 			continue
 		match = re.search(tokens[1], source_file)
 		if match is not None and '.c' in tokens[1]:
+			# Save it in basename.seg
+			base, ext = os.path.splitext(object_file)
+			if(not os.path.exists('/'.join(base.split('/')[:-1]))):
+				return None
+			of = open(base+'.seg', 'w')
+			of.write(tokens[0] + '\n')
+			of.close
 			return tokens[0]
 	return None
 
@@ -152,7 +159,7 @@ def relocate(module, bank):
 if len(sys.argv) < 3:
 	print 'Usage:'
 	print 'bank-alloc.py project path_to_segment_rules [offset]'
-	print 'bank-alloc.py source_file path_to_segment_rules'
+	print 'bank-alloc.py source_file path_to_segment_rules project'
 	sys.exit(1)
 
 modules = list()
@@ -164,7 +171,13 @@ segment_rules = sys.argv[2]
 basename, ext = os.path.splitext(file_name)
 if ext == '.c':
 	# Code Segment determination
-	seg = get_source_seg(file_name, segment_rules)
+	if len(sys.argv) < 4:
+		print 'Usage:'
+		print 'bank-alloc.py project path_to_segment_rules [offset]'
+		print 'bank-alloc.py source_file path_to_segment_rules project'
+		sys.exit(1)
+	# Code Segment determination
+	seg = get_source_seg(file_name, sys.argv[3], segment_rules)
 	if seg is None:
 		print "BANK1"
 	else:
@@ -174,7 +187,10 @@ if ext == '.c':
 # Bin-Packing
 offset = 0
 if len(sys.argv) > 3 and sys.argv[3] is not None:
-	offset = int(sys.argv[3])
+	try:
+		offset = int(sys.argv[3])
+	except ValueError:
+		pass
 
 sizes = {'total': 0, 'bankable': 0, 'user': 0, 'libs': 0}
 
@@ -212,16 +228,24 @@ of = open(basename + '.banks', 'w')
 pack = bin_pack(modules, bins, offset, of)
 of.close()
 
+print "----------------------------------------"
 print "Bin-Packing results (target allocation):"
 print "Segment - max - alloc"
 for bin_id in ['HOME', 'BANK1', 'BANK2', 'BANK3', 'BANK4', 'BANK5', 'BANK6', 'BANK7']:
 	if bins[bin_id][0] > 0:
-		print bin_id.rjust(7), str(bins[bin_id][1]).rjust(6), str(bins[bin_id][0]).rjust(6)
+		print bin_id.rjust(7), str(bins[bin_id][1]).rjust(6), str(bins[bin_id][0]).rjust(6),
+		if(bins[bin_id][1] < bins[bin_id][0]):
+			print "---- ERROR: OVER FLOW IN SEGMENT %s----"%bin_id
+			pack = 1 # Case a error and return after all banks printed
+		else:
+			print ""
+print "----------------------------------------"
 
 if pack > 0:
 	sys.exit(1)
 
 # If we reach here we seem to have a sane allocation. Start changing .rel files
+print modules
 for module in modules:
 	relocate(module[0], module[2])
 
