@@ -455,6 +455,10 @@ link_update(void)
 		
 		// reset statistics when unlocked
 		statistics_receive_count = 0;
+		
+#ifdef TDM_SYNC_LOGIC
+		TDM_SYNC_PIN = false;
+#endif // TDM_SYNC_LOGIC
 	}
 	
 	if (unlock_count % 5 == 4) {
@@ -462,9 +466,6 @@ link_update(void)
 			fhop_window_change(); // Try our luck on another channel
 		}
 		else {
-#ifdef TDM_SYNC_LOGIC
-			TDM_SYNC_PIN = false;
-#endif // TDM_SYNC_LOGIC
 			fhop_set_locked(false); // Set channel back to sync and try again
 			radio_set_channel(fhop_sync_channel());
 		}
