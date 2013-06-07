@@ -46,9 +46,9 @@ MODEL_HUGE=$(if $(filter $(HB),1),$(BS),0)
 
 ifeq ($(MODEL_HUGE), 1)
 	OFFSET_FIRMWARE=1
-	CFLAG_MODEL			 = --model-huge --stack-auto
+	CFLAG_MODEL			 = --model-huge
 else
-	CFLAG_MODEL			 = --model-large --stack-auto
+	CFLAG_MODEL			 = --model-large
 endif
 
 #
