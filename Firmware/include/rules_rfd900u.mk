@@ -31,6 +31,5 @@
 FREQUENCIES			 = 915
 XRAM_SIZE			 = 8448
 HAVE_BANKING		 = 1
-BANKS				 = -Wl-bBANK1=0x18000 -Wl-bBANK2=0x28000 -Wl-bBANK3=0x38000 -Wl-r
-LDFLAGS				+= --model-huge --iram-size 256 --xram-size $(XRAM_SIZE) --code-loc 0x400 --code-size 0x1F400 --stack-size 64 $(BANKS)
+LDFLAGS				+= --model-huge --stack-auto --out-fmt-ihx --iram-size 256 --xram-size $(XRAM_SIZE) --code-loc 0x400 --code-size 0x1F400 --stack-size 64
 BOOTLDFLAGS			 = --iram-size 256 --xram-size $(XRAM_SIZE) --stack-size 64 --nostdlib -Wl-bHIGHCSEG=0x3FC00 -Wl-r

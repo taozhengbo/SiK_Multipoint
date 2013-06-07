@@ -62,7 +62,10 @@ def get_source_seg(source_file, object_file, segment_rules):
 			# Save it in basename.seg
 			base, ext = os.path.splitext(object_file)
 			if(not os.path.exists('/'.join(base.split('/')[:-1]))):
-				return None
+				try:
+					os.makedirs('/'.join(base.split('/')[:-1]))
+				except OSError:
+					return None
 			of = open(base+'.seg', 'w')
 			of.write(tokens[0] + '\n')
 			of.close

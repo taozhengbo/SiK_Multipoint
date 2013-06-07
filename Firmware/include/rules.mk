@@ -107,14 +107,12 @@ $(PRODUCT_HEX):	$(OBJS)
 	@echo LD $@
 	@mkdir -p $(dir $@)
 ifeq ($(MODEL_HUGE), 1)
-	$(LD) $(LDFLAGS) -Wl-bBANK1=0x018000 -Wl-r -o $@ $(OBJS)
-	$(BANK_ALLOC) $(OBJROOT)/$(PRODUCT) $(PRODUCT_DIR)/segment.rules
+	$(v)$(LD) $(LDFLAGS) -Wl-bBANK1=0x018000 -Wl-r -o $@ $(OBJS)
+	$(v)$(BANK_ALLOC) $(OBJROOT)/$(PRODUCT) $(PRODUCT_DIR)/segment.rules
 	@rm $@
-	@cat $(OBJROOT)/$(PRODUCT).flags
-	@echo LD $@
 	$(LD) -o $@ $(LDFLAGS) $(shell cat $(OBJROOT)/$(PRODUCT).flags) -Wl-r $(OBJS)
 else
-	$(LD) $(LDFLAGS) -o $@ $(OBJS)
+	$(v)$(LD) $(LDFLAGS) -o $@ $(OBJS)
 endif
 
 $(OBJROOT)/%.rel: $(PRODUCT_DIR)/%.c

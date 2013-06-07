@@ -41,16 +41,16 @@
 // It would be nice to derive all these numbers from some
 // simpler values, but life is easier if we just spell them all out.
 //
-#define FLASH_PAGE_SIZE		0x0400		// 1KiB
+#define FLASH_PAGE_SIZE		0x00400		// 1KiB
 #define FLASH_PAGE_SHIFT	10
-#define FLASH_APP_START		0x0400		// 1 page reserved for bootloader
-#ifdef BOARD_rfd900u
-#define FLASH_INFO_PAGE     0x1F800     // 1 page reserved for bootloader
-#define FLASH_LOCK_BYTE		0x1FBFF
-#else
-#define FLASH_INFO_PAGE		0xF800		// 1 page reserved for bootloader
-#define FLASH_LOCK_BYTE		0xFBFF
-#endif // BOARD_rfd900u
+#define FLASH_APP_START		0x00400		// 1 page reserved for bootloader
+//#ifdef BOARD_rfd900u
+//#define FLASH_INFO_PAGE		0x1F800lu	// 1 page reserved for bootloader
+//#define FLASH_LOCK_BYTE		0x1FBFFlu
+//#else
+#define FLASH_INFO_PAGE		0x0F800		// 1 page reserved for bootloader
+#define FLASH_LOCK_BYTE		0x0FBFF
+//#endif // BOARD_rfd900u
 
 // Anticipated flash signature bytes
 //
@@ -65,7 +65,7 @@
 //
 #define FLASH_FREQUENCY_BYTE	(FLASH_LOCK_BYTE - 1)
 
-#ifdef BOARD_rfd900a
+#if defined BOARD_rfd900a || defined BOARD_rfd900u
 // locked and unlocked areas to store power calibration info
 #define FLASH_CALIBRATION_AREA_SIZE (31)
 #define FLASH_CALIBRATION_CRC_HIGH  (FLASH_FREQUENCY_BYTE - 1)
