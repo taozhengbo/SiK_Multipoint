@@ -110,7 +110,7 @@ ifeq ($(MODEL_HUGE), 1)
 	$(v)$(LD) $(LDFLAGS) -Wl-bBANK1=0x018000 -Wl-r -o $@ $(OBJS)
 	$(v)$(BANK_ALLOC) $(OBJROOT)/$(PRODUCT) $(PRODUCT_DIR)/segment.rules
 	@rm $@
-	$(LD) -o $@ $(LDFLAGS) $(shell cat $(OBJROOT)/$(PRODUCT).flags) -Wl-r $(OBJS)
+	$(LD) -o $@ $(LDFLAGS) `cat $(OBJROOT)/$(PRODUCT).flags` -Wl-r $(OBJS)
 else
 	$(v)$(LD) $(LDFLAGS) -o $@ $(OBJS)
 endif
