@@ -57,7 +57,7 @@ def get_source_seg(source_file, object_file, segment_rules):
 		tokens = line.split(None)
 		if len(tokens) < 2:
 			continue
-		match = re.search(tokens[1], source_file)
+		match = re.search(tokens[1], source_file.split('/')[-1])
 		if match is not None and '.c' in tokens[1]:
 			# Save it in basename.seg
 			base, ext = os.path.splitext(object_file)
