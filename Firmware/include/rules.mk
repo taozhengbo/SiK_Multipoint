@@ -110,7 +110,7 @@ ifeq ($(MODEL_HUGE), 1)
 	$(v)$(LD) $(LDFLAGS) -Wl-bBANK1=0x018000 -Wl-r -o $@ $(OBJS)
 	$(v)$(BANK_ALLOC) $(OBJROOT)/$(PRODUCT) $(PRODUCT_DIR)/segment.rules
 	@rm $@
-	$(LD) -o $@ $(LDFLAGS) `cat $(OBJROOT)/$(PRODUCT).flags` -Wl-r $(OBJS)
+	$(v)$(LD) -o $@ $(LDFLAGS) `cat $(OBJROOT)/$(PRODUCT).flags` -Wl-r $(OBJS)
 else
 	$(v)$(LD) $(LDFLAGS) -o $@ $(OBJS)
 endif
@@ -123,7 +123,7 @@ ifeq ($(MODEL_HUGE), 1)
 	$(v)$(CC) --codeseg $(shell $(BANK_ALLOC) $< $(PRODUCT_DIR)/segment.rules $@) $(CFLAGS) -c $< -o $@
 else
 	@echo CC $<
-	$(CC) -c -o $@ $(CFLAGS) $<
+	$(v)$(CC) -c -o $@ $(CFLAGS) $<
 endif
 
 $(OBJROOT)/%.rel: $(PRODUCT_DIR)/%.asm
@@ -134,7 +134,6 @@ $(OBJROOT)/%.rel: $(PRODUCT_DIR)/%.asm
 
 clean:
 	$(v)rm -rf $(OBJROOT)
-	
 
 install:	$(PRODUCT_INSTALL)
 	@echo INSTALL $^

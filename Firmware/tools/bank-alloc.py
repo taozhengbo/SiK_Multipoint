@@ -248,7 +248,6 @@ if pack > 0:
 	sys.exit(1)
 
 # If we reach here we seem to have a sane allocation. Start changing .rel files
-print modules
 for module in modules:
 	relocate(module[0], module[2])
 
