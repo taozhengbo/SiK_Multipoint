@@ -16,27 +16,25 @@
 #  All files without an associated rule get allocated to a bank automatically
 
 # Files with ISRs must be in HOME
-HOME main.c
 HOME timer.c
-HOME tdm.c
 HOME radio.c
 HOME serial.c
+HOME main.c
 
-#rtc.c
-
-#BANK1
+BANK1 rtc.c
 BANK1 printfl.c
 BANK1 packet.c
-BANK1 freq_hopping.c
 
-#BANK2
 BANK2 mavlink.c
 
-#BANK3
 BANK3 at.c
 BANK3 golay.c
 BANK3 parameters.c
 BANK3 crc.c
+
+# freq_hooping needs to be in the same bank as tdm (due to __nonbanked to save space)
+BANK3 freq_hopping.c
+BANK3 tdm.c
 
 # Flash MUST be in bank3 as it needs to read the end of this page
 BANK3 flash.c
