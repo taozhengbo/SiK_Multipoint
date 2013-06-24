@@ -131,7 +131,7 @@ serial_interrupt(void) __interrupt(INTERRUPT_UART0) __nonbanked
 				}
 			}
 #ifdef SERIAL_CTS
-			if (BUF_FREE(rx) < SERIAL_CTS_THRESHOLD_LOW) {
+			if (feature_rtscts && (BUF_FREE(rx) < SERIAL_CTS_THRESHOLD_LOW)) {
 				SERIAL_CTS = true;
 			}
 #endif
@@ -323,7 +323,7 @@ serial_read(void)
 	}
 
 #ifdef SERIAL_CTS
-	if (BUF_FREE(rx) > SERIAL_CTS_THRESHOLD_HIGH) {
+	if (feature_rtscts && (BUF_FREE(rx) > SERIAL_CTS_THRESHOLD_HIGH)) {
 		SERIAL_CTS = false;
 	}
 #endif
@@ -391,7 +391,7 @@ serial_read_buf(__xdata uint8_t * __data buf, __pdata uint8_t count)
 
 #ifdef SERIAL_CTS
 	__critical {
-		if (BUF_FREE(rx) > SERIAL_CTS_THRESHOLD_HIGH) {
+		if (feature_rtscts && (BUF_FREE(rx) > SERIAL_CTS_THRESHOLD_HIGH)) {
 			SERIAL_CTS = false;
 		}
 	}

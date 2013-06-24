@@ -435,6 +435,9 @@ link_update(void)
 		unlock_count = 0;
 		received_sync = false;
 		fhop_set_locked(true);
+#ifdef TDM_SYNC_LOGIC
+		TDM_SYNC_PIN = true;
+#endif // TDM_SYNC_LOGIC
 	} else {
 		unlock_count++;
 	}
@@ -452,6 +455,10 @@ link_update(void)
 		
 		// reset statistics when unlocked
 		statistics_receive_count = 0;
+		
+#ifdef TDM_SYNC_LOGIC
+		TDM_SYNC_PIN = false;
+#endif // TDM_SYNC_LOGIC
 	}
 	
 	if (unlock_count % 5 == 4) {
@@ -1253,6 +1260,10 @@ tdm_init(void)
 	P2 &= ~0x40;
 #endif // DEBUG_PINS_YIELD
 #endif // USE_TICK_YIELD
+	
+#ifdef TDM_SYNC_LOGIC
+	TDM_SYNC_PIN = false;
+#endif // TDM_SYNC_LOGIC
 }
 
 
