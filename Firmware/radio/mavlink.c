@@ -52,7 +52,7 @@ extern bool using_mavlink_10;
  * Calculates the MAVLink checksum on a packet in pbuf[] 
  * and append it after the data
  */
-static void mavlink_crc(void)
+static void mavlink_crc(void) __nonbanked
 {
 	register uint8_t length = pbuf[1];
         __pdata uint16_t sum = 0xFFFF;
@@ -114,7 +114,7 @@ struct mavlink_RADIO_v10 {
 	uint8_t remnoise;
 };
 
-static void swap_bytes(__pdata uint8_t ofs, __pdata uint8_t len)
+static void swap_bytes(__pdata uint8_t ofs, __pdata uint8_t len) __nonbanked
 {
 	register uint8_t i;
 	for (i=ofs; i<ofs+len; i+=2) {

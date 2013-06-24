@@ -97,7 +97,7 @@ static void serial_device_set_speed(register uint8_t speed);
 #define SERIAL_CTS_THRESHOLD_HIGH RX_BUFF_MAX/2
 
 void
-serial_interrupt(void) __interrupt(INTERRUPT_UART0)
+serial_interrupt(void) __interrupt(INTERRUPT_UART0) __nonbanked
 {
 	register uint8_t	c;
 

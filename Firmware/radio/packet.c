@@ -78,7 +78,7 @@ bool using_mavlink_10;
 // is used to determine if we will inject RADIO status MAVLink
 // messages into the serial stream for ground station and aircraft
 // monitoring of link quality
-static void check_heartbeat(__xdata uint8_t * __pdata buf)
+static void check_heartbeat(__xdata uint8_t * __pdata buf) __nonbanked
 {
 	if (buf[0] == MAVLINK09_STX &&
 	    buf[1] == 3 && buf[5] == 0) {
@@ -96,7 +96,7 @@ static void check_heartbeat(__xdata uint8_t * __pdata buf)
 // return a complete MAVLink frame, possibly expanding
 // to include other complete frames that fit in the max_xmit limit
 static 
-uint8_t mavlink_frame(uint8_t max_xmit, __xdata uint8_t * __pdata buf)
+uint8_t mavlink_frame(uint8_t max_xmit, __xdata uint8_t * __pdata buf) __nonbanked
 {
 	__data uint16_t slen;
 

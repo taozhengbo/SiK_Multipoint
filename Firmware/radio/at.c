@@ -213,7 +213,7 @@ at_timer(void)
 #pragma restore
 
 static uint32_t
-at_parse_number() __reentrant
+at_parse_number() __reentrant __nonbanked
 {
 	uint32_t	reg;
 	uint8_t		c;
@@ -310,19 +310,19 @@ at_command(void)
 }
 
 static void
-at_ok(void)
+at_ok(void) __nonbanked
 {
 	printf("[%u] OK\n", nodeId);
 }
 
 static void
-at_error(void)
+at_error(void) __nonbanked
 {
 	printf("[%u] ERROR\n", nodeId);
 }
 
 static void
-at_i(void)
+at_i(void) __nonbanked
 {
 	__pdata uint8_t	id;
 	switch (at_cmd[3]) {
@@ -361,7 +361,7 @@ at_i(void)
 }
 
 static void
-at_s(void)
+at_s(void) __nonbanked
 {
 	__pdata uint8_t		sreg;
 	__pdata uint32_t	val;
@@ -396,7 +396,7 @@ at_s(void)
 }
 
 static void
-at_ampersand(void)
+at_ampersand(void) __nonbanked
 {
 	switch (at_cmd[3]) {
 	case 'F':

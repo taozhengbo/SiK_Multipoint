@@ -50,7 +50,7 @@ __at(FLASH_SIGNATURE_BYTES) uint8_t __code app_signature[2] = { FLASH_SIG0, FLAS
 /// one write or erase operation.
 ///
 static void
-flash_load_keys(void)
+flash_load_keys(void) __nonbanked
 {
 	FLKEY = 0xa5;
 	FLKEY = 0xf1;

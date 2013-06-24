@@ -60,7 +60,7 @@ static const __code uint32_t shift_table[12] = {
 
 // calculate the golay syndrome value
 static uint16_t 
-golay_syndrome(__data uint32_t codeword)
+golay_syndrome(__data uint32_t codeword) __nonbanked
 {
 	__data uint32_t shift = (1UL<<22);
 	__data uint8_t shiftcount = 11;
@@ -79,7 +79,7 @@ golay_syndrome(__data uint32_t codeword)
 // encode 3 bytes data into 6 bytes of coded data
 // input is in g3[], output in g6[]
 static void 
-golay_encode24(void)
+golay_encode24(void) __nonbanked
 {
 	__pdata uint16_t v;
 	__pdata uint32_t codeword;
@@ -117,7 +117,7 @@ golay_encode(__pdata uint8_t n, __xdata uint8_t * __pdata in, __xdata uint8_t * 
 // input is in g6[], output in g3[]
 // returns the number of words corrected (0, 1 or 2)
 static uint8_t 
-golay_decode24(void)
+golay_decode24(void) __nonbanked
 {
 	__data uint16_t v, v0;
 	__data uint32_t codeword;
