@@ -66,8 +66,8 @@ $(PRODUCT_INSTALL):	$(PRODUCT_HEX)
 $(PRODUCT_INSTALL):	sizecheck
 
 sizecheck:	mapfile = $(subst .ihx,.map,$(PRODUCT_HEX))
-sizecheck:	cseg_base = $(shell printf %d 0x`grep ^CSEG $(mapfile) -m 1 | cut -c 41-44`)
-sizecheck:	cseg_size = $(shell printf %d 0x`grep ^CSEG $(mapfile) -m 1 | cut -c 53-56`)
+sizecheck:	cseg_base = $(shell printf %d 0x`grep ^HOME $(mapfile) -m 1 | cut -c 41-44`)
+sizecheck:	cseg_size = $(shell printf %d 0x`grep ^HOME $(mapfile) -m 1 | cut -c 53-56`)
 sizecheck:	cseg_end  = $(shell expr $(cseg_base) + $(cseg_size))
 sizecheck:	highcseg_base = $(shell printf %d 0x`grep ^HIGHCSEG $(mapfile) -m 1 | cut -c 41-44`)
 sizecheck:	highcseg_size = $(shell printf %d 0x`grep ^HIGHCSEG $(mapfile) -m 1 | cut -c 53-56`)
