@@ -46,28 +46,28 @@ extern void fhop_init(uint16_t netid);
 ///
 /// @return		The channel that we should be receiving on.
 //
-extern uint8_t fhop_receive_channel(void);
+extern uint8_t fhop_receive_channel(void) __nonbanked;
 
 /// tell the TDM code what channel to sync on
 ///
 /// @return		The channel that we should be syncing on.
 //
-extern uint8_t fhop_sync_channel(void);
+extern uint8_t fhop_sync_channel(void) __nonbanked;
 
 
 // Get and Set the transmit channel, needed to get nodes in sync
-extern uint8_t get_transmit_channel(void);
-extern void set_transmit_channel(uint8_t channel);
+extern uint8_t get_transmit_channel(void) __nonbanked;
+extern void set_transmit_channel(uint8_t channel) __nonbanked;
 
 /// called when the transmit window flips
 ///
-extern void fhop_window_change(void);
+extern void fhop_window_change(void) __nonbanked;
 
 /// called when we get or lose radio lock
 ///
 /// @param locked	True if we have gained lock, false if we have lost it.
 ///
-extern void fhop_set_locked(bool locked);
+extern void fhop_set_locked(bool locked) __nonbanked;
 
 /// how many channels are we hopping over
 extern __pdata uint8_t num_fh_channels;

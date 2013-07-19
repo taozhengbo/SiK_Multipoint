@@ -51,7 +51,7 @@ __xdata static uint8_t channel_map[MAX_FREQ_CHANNELS];
 // a vary simple array shuffle
 // based on shuffle from
 // http://benpfaff.org/writings/clc/shuffle.html
-static inline void shuffle(__xdata uint8_t *array, uint8_t n)
+static inline void shuffle(__xdata uint8_t *array, uint8_t n) __nonbanked
 {
 	uint8_t i;
 	for (i = 0; i < n - 1; i++) {
@@ -78,14 +78,14 @@ fhop_init(uint16_t netid)
 
 // tell the TDM code what channel to receive on
 uint8_t 
-fhop_receive_channel(void)
+fhop_receive_channel(void) __nonbanked
 {
 	return channel_map[fhop_channel];
 }
 
 // tell the TDM code what channel to transmit on
 uint8_t 
-fhop_sync_channel(void)
+fhop_sync_channel(void) __nonbanked
 {
 	// Fixed sync channel
 	return channel_map[SYNC_CHANNEL % num_fh_channels];
@@ -93,21 +93,21 @@ fhop_sync_channel(void)
 
 // get the current transmit channel (NOT the map frequency)
 uint8_t
-get_transmit_channel(void)
+get_transmit_channel(void) __nonbanked
 {
 	return fhop_channel;
 }
 
 // set the current transmit channel (NOT the map frequency)
 void
-set_transmit_channel(uint8_t channel)
+set_transmit_channel(uint8_t channel) __nonbanked
 {
 	fhop_channel = channel;
 }
 
 // called when the transmit windows changes owner
 void 
-fhop_window_change(void)
+fhop_window_change(void) __nonbanked
 {
 	fhop_channel = (fhop_channel + 1) % num_fh_channels;
 	if (!have_radio_lock) {
@@ -119,7 +119,7 @@ fhop_window_change(void)
 
 // called when we get or lose radio lock
 void 
-fhop_set_locked(bool locked)
+fhop_set_locked(bool locked) __nonbanked
 {
 #if DEBUG
 	if (locked && !have_radio_lock) {

@@ -1,5 +1,6 @@
 // -*- Mode: C; c-basic-offset: 8; -*-
 //
+// Copyright (c) 2013 Luke Hovington, All Rights Reserved
 // Copyright (c) 2012 Andrew Tridgell, All Rights Reserved
 //
 // Redistribution and use in source and binary forms, with or without
@@ -44,7 +45,7 @@
 //#define DEBUG_PINS_TX_RX_STATE // P2.3
 
 // Sync Logic on Pin // P2.6
-#define TDM_SYNC_LOGIC
+//#define TDM_SYNC_LOGIC
 
 // Hard coded for the inital testing, need to figure out how this could be changed on the fly later down the track
 // Maybe a new command seprate from the AT? Without entering +++ mode? more thought needed
