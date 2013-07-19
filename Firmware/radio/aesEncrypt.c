@@ -42,14 +42,21 @@
 //=============================================================================
 #ifdef INCLUDE_ENCRYPTION
 
-void IncrementCounter(__xdata counter);
+void IncrementCounter(VARIABLE_SEGMENT_POINTER(counter, uint8_t, SEG_XDATA));
 
-uint8_t CTR_EncryptDecrypt (uint8_t operation, uint8_t __xdata *plainText, uint8_t __xdata *cipherText,
-							uint8_t __xdata *counter, uint8_t __xdata *encryptionKey, uint16_t blocks)
+//uint8_t CTR_EncryptDecrypt (uint8_t operation, uint8_t __xdata *plainText, uint8_t __xdata *cipherText,
+//							uint8_t __xdata *counter, uint8_t __xdata *encryptionKey, uint16_t blocks)
+uint8_t
+CTR_EncryptDecrypt (uint8_t operation,
+					VARIABLE_SEGMENT_POINTER(plainText, uint8_t, SEG_XDATA),
+					VARIABLE_SEGMENT_POINTER(cipherText, uint8_t, SEG_XDATA),
+					VARIABLE_SEGMENT_POINTER(counter, uint8_t, SEG_XDATA),
+					VARIABLE_SEGMENT_POINTER(encryptionKey, uint8_t, SEG_XDATA),
+					uint16_t blocks)
 {
 	// Unions used for compiler independent endianness.
-	uint16_t length;                        // Length in bytes for all blocks.
-	uint16_t addr;                          // Union used to access pointer bytes.
+	UU16 length;                        // Length in bytes for all blocks.
+	UU16 addr;                          // Union used to access pointer bytes.
 	
 	uint8_t keyLength;                       // Used to calculate key length in bytes.
 	
@@ -66,7 +73,7 @@ uint8_t CTR_EncryptDecrypt (uint8_t operation, uint8_t __xdata *plainText, uint8
 	
 	// Calculate plaintext and ciphertext total length.
 	// Using <<4 in lieu of * 16 for code efficiency.
-	length = (blocks << 4);
+	length.U16 = (blocks << 4);
 	
 	// From this point on, "blocks" is used to count remaining blocks.
 	blocks--;
@@ -85,12 +92,12 @@ uint8_t CTR_EncryptDecrypt (uint8_t operation, uint8_t __xdata *plainText, uint8
 	// This is necessary because we want the Key DMA channel
 	// to stop after the first block.
 	
-	addr = (uint16_t)(encryptionKey);
+	addr.U16 = (uint16_t)(encryptionKey);
 	DMA0SEL = AES0KIN_CHANNEL;
 	DMA0NCF = AES0KIN_PERIPHERAL_REQUEST;
 	DMA0NMD = NO_WRAPPING;
-	DMA0NBAL = addr&0xff;
-	DMA0NBAH = addr>>8;
+	DMA0NBAL = addr.U8[LSB];
+	DMA0NBAH = addr.U8[MSB];
 	DMA0NSZH = 0;
 	DMA0NSZL = keyLength;
 	DMA0NAOL = 0;
@@ -105,9 +112,9 @@ uint8_t CTR_EncryptDecrypt (uint8_t operation, uint8_t __xdata *plainText, uint8
 	DMA0SEL = AES0BIN_CHANNEL;
 	DMA0NCF = AES0BIN_PERIPHERAL_REQUEST;
 	DMA0NMD = NO_WRAPPING;
-	addr = (uint16_t)(counter);
-	DMA0NBAL = addr&0xff;
-	DMA0NBAH = addr>>8;
+	addr.U16 = (uint16_t)(counter);
+	DMA0NBAL = addr.U8[LSB];
+	DMA0NBAH = addr.U8[MSB];
 	DMA0NSZL = 16;                      // one block
 	DMA0NSZH = 0;
 	DMA0NAOL = 0;
@@ -117,9 +124,9 @@ uint8_t CTR_EncryptDecrypt (uint8_t operation, uint8_t __xdata *plainText, uint8
 	// for decryption operation.
 	
 	if(operation & ENCRYPTION_MODE)
-		addr = (uint16_t)(plainText);
+		addr.U16 = (uint16_t)(plainText);
 	else
-		addr = (uint16_t)(cipherText);
+		addr.U16 = (uint16_t)(cipherText);
 	
 	// Configure AES XOR input channel using corresponding address.
 	// Clear DMA0NMD to disable wrapping.
@@ -127,8 +134,8 @@ uint8_t CTR_EncryptDecrypt (uint8_t operation, uint8_t __xdata *plainText, uint8
 	DMA0SEL = AES0XIN_CHANNEL;
 	DMA0NCF = AES0XIN_PERIPHERAL_REQUEST;
 	DMA0NMD = NO_WRAPPING;
-	DMA0NBAL = addr&0xff;
-	DMA0NBAH = addr>>8;
+	DMA0NBAL = addr.U8[LSB];
+	DMA0NBAH = addr.U8[MSB];
 	DMA0NSZL = 16;                      // one block
 	DMA0NSZH = 0;
 	DMA0NAOL = 0;
@@ -138,9 +145,9 @@ uint8_t CTR_EncryptDecrypt (uint8_t operation, uint8_t __xdata *plainText, uint8
 	// plaintext for decryption operation.
 	
 	if(operation & ENCRYPTION_MODE)
-		addr = (uint16_t)(cipherText);
+		addr.U16 = (uint16_t)(cipherText);
 	else
-		addr = (uint16_t)(plainText);
+		addr.U16 = (uint16_t)(plainText);
 	
 	// Configure AES Y output channel using corresponding address
 	// Set length to 16 for first block only.
@@ -150,8 +157,8 @@ uint8_t CTR_EncryptDecrypt (uint8_t operation, uint8_t __xdata *plainText, uint8
 	DMA0NCF = AES0YOUT_PERIPHERAL_REQUEST|DMA_INT_EN;
 	DMA0NMD = NO_WRAPPING;
 	
-	DMA0NBAL = addr&0xff;
-	DMA0NBAH = addr>>8;
+	DMA0NBAL = addr.U8[LSB];
+	DMA0NBAH = addr.U8[MSB];
 	DMA0NSZL = 16;                      // one block
 	DMA0NSZH = 0;
 	DMA0NAOH = 0;
@@ -279,7 +286,7 @@ uint8_t CTR_EncryptDecrypt (uint8_t operation, uint8_t __xdata *plainText, uint8
 // This results in obtuse C code.
 //
 //-----------------------------------------------------------------------------
-void IncrementCounter (__xdata counter)
+void IncrementCounter (VARIABLE_SEGMENT_POINTER(counter, uint8_t, SEG_XDATA))
 {
 	uint8_t i;
 	uint8_t x;
