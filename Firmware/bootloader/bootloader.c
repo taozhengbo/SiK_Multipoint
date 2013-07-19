@@ -34,6 +34,8 @@
 /// Protocol inspired by the STK500 protocol by way of Arduino.
 ///
 
+#pragma codeseg HOME
+
 #include <compiler_defs.h>
 #include <stdio.h>
 #include <stdint.h>

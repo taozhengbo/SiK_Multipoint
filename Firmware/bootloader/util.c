@@ -32,6 +32,8 @@
 /// Miscellaneous support utilities
 ///
 
+#pragma codeseg HOME
+
 #include <compiler_defs.h>
 
 #include <stdint.h>

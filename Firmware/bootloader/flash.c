@@ -41,9 +41,12 @@
 #include "flash.h"
 #include "util.h"
 
+#ifdef FLASH_BANKS
+#pragma codeseg HOME
+#else
 // Place all code in the high page
-//
 #pragma codeseg HIGHCSEG
+#endif // FLASH_BANKS
 
 /// Signature bytes at the very end of the application space.
 ///
@@ -102,7 +105,44 @@ void
 flash_erase_app(void)
 {
 	uint16_t	address;
-
+#ifdef FLASH_BANKS
+	uint16_t	greaterAddress;
+	uint8_t		bank;
+	uint8_t		bank_state = PSBANK;
+	for (bank=FLASH_BANKS-1; bank>0; bank--) {
+		// Change to the correct Bank..
+		PSBANK = ((bank_state & 0x03) | (bank<<4)); // Set IFBANK to current value and COBANK to the erase page..
+		
+		switch (bank) {
+			case 3:
+				address = FLASH_INFO_PAGE - FLASH_PAGE_SIZE;
+				greaterAddress = 0x8000;
+				break;
+			case 2:
+				address = 0xFFFF;
+				greaterAddress = 0x8000;
+				break;
+			case 1:
+				address = 0xFFFF;
+				greaterAddress = FLASH_APP_START;
+				break;
+			default:
+				address = 1;
+				greaterAddress = 0;
+				break;
+		}
+		
+		// start with the signature so that a partial erase will fail the signature check on startup
+		for (; address >= greaterAddress; address -= FLASH_PAGE_SIZE) {
+			flash_load_keys();
+			PSCTL = 0x03;				// set PSWE and PSEE
+			*(uint8_t __xdata *)address = 0xff;	// do the page erase
+			PSCTL = 0x00;				// disable PSWE/PSEE
+		}
+	}
+	// Restore Prev State
+	PSBANK = bank_state;
+#else
 	// start with the signature so that a partial erase will fail the signature check on startup
 	for (address = FLASH_INFO_PAGE - FLASH_PAGE_SIZE; address >= FLASH_APP_START; address -= FLASH_PAGE_SIZE) {
 		flash_load_keys();
@@ -110,6 +150,7 @@ flash_erase_app(void)
 		*(uint8_t __xdata *)address = 0xff;	// do the page erase
 		PSCTL = 0x00;				// disable PSWE/PSEE
 	}
+#endif
 }
 
 void
@@ -139,7 +180,7 @@ flash_read_byte(uint16_t address)
 	return *(uint8_t __code *)address;
 }
 
-#if defined BOARD_rfd900a || defined BOARD_rfd900u
+#if defined BOARD_rfd900a //|| defined BOARD_rfd900u
 __at(FLASH_CALIBRATION_AREA_HIGH) uint8_t __code calibration[FLASH_CALIBRATION_AREA_SIZE];
 __at(FLASH_CALIBRATION_CRC_HIGH) uint8_t __code calibration_crc;
 
@@ -179,4 +220,4 @@ flash_transfer_calibration()
 	}
 	flash_write_byte(FLASH_CALIBRATION_CRC, calibration_crc);
 }
-#endif //BOARD_rfd900a/u
+#endif //BOARD_rfd900a
