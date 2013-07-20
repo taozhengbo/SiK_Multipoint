@@ -108,7 +108,7 @@ $(PRODUCT_HEX):	$(OBJS)
 	@mkdir -p $(dir $@)
 ifeq ($(MODEL_HUGE), 1)
 	$(v)$(LD) $(LDFLAGS) -Wl-bBANK1=0x018000 -Wl-r -o $@ $(OBJS)
-	$(v)$(BANK_ALLOC) $(OBJROOT)/$(PRODUCT) $(PRODUCT_DIR)/segment.rules
+	$(BANK_ALLOC) $(OBJROOT)/$(PRODUCT) $(PRODUCT_DIR)/segment.rules $(CODE_OFFSET)
 	@rm $@
 	$(v)$(LD) -o $@ $(LDFLAGS) `cat $(OBJROOT)/$(PRODUCT).flags` -Wl-r $(OBJS)
 else

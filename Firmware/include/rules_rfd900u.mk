@@ -32,5 +32,8 @@ FREQUENCIES			 = 915
 XRAM_SIZE			 = 8448
 HAVE_BANKING		 = 1
 CFLAGS				+= --constseg HOME
-LDFLAGS				+= --model-huge --out-fmt-ihx --iram-size 256 --xram-size $(XRAM_SIZE) --code-loc 0x400 --code-size 0x1F400 --stack-size 64
-BOOTLDFLAGS			 = --iram-size 256 --xram-size $(XRAM_SIZE) --stack-size 64 --nostdlib -Wl-r #-Wl-bHIGHCSEG=0x3FEFF
+CODE_OFFSET          = 0x800
+LDFLAGS				+= --model-huge --out-fmt-ihx --iram-size 256 --xram-size $(XRAM_SIZE) --code-loc $(CODE_OFFSET) --code-size 0x1F400 --stack-size 64
+BOOTLDFLAGS			 = --iram-size 256 --xram-size $(XRAM_SIZE) --stack-size 64 --nostdlib -Wl-r
+# Place the bootloader flash page above the bootloader
+BOOTLDFLAGS			+= -Wl-bHIGHCSEG=0x00400

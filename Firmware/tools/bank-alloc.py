@@ -126,8 +126,11 @@ def populate(project, modules, segment_rules, bins):
 # Allocate bankable modules to banks according to a simple
 # 'first fit, decreasing' bin packing heuristic.
 def bin_pack(modules, bins, offset, log):
-	if offset==1:
-		bins['HOME'][1] -= 4096
+	if offset > 0:
+		if offset > 1024:
+			bins['HOME'][1] -= offset
+		else:
+			bins['HOME'][1] -= offset * 1024
 
 	# Sort by size, descending, in=place
 	modules.sort(key=operator.itemgetter(1), reverse=True)
@@ -191,7 +194,8 @@ if ext == '.c':
 offset = 0
 if len(sys.argv) > 3 and sys.argv[3] is not None:
 	try:
-		offset = int(sys.argv[3])
+		offset = int(sys.argv[3], 0)
+		print "Offset is.. ", offset
 	except ValueError:
 		pass
 
