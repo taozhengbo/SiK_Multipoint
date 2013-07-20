@@ -195,7 +195,6 @@ offset = 0
 if len(sys.argv) > 3 and sys.argv[3] is not None:
 	try:
 		offset = int(sys.argv[3], 0)
-		print "Offset is.. ", offset
 	except ValueError:
 		pass
 
