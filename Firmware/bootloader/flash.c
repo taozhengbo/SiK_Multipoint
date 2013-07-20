@@ -41,12 +41,8 @@
 #include "flash.h"
 #include "util.h"
 
-#ifdef FLASH_BANKS
-#pragma codeseg HOME
-#else
 // Place all code in the high page
 #pragma codeseg HIGHCSEG
-#endif // FLASH_BANKS
 
 /// Signature bytes at the very end of the application space.
 ///
