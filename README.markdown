@@ -57,7 +57,7 @@ Example getting the parameter list from base node would be 'RTI5,0'
  - [SDCC](http://sdcc.sourceforge.net/), version 3.1.0 or later. (install from source to include 'small large huge' models -> [SDCC Install Guide](https://github.com/contiki-os/contiki/wiki/8051-Requirements))
  - [EC2Tools](http://github.com/tridge/ec2)
  - [Mono](http://www.mono-project.com/) to build and run the GUI firmware updater.
- - Python to run the command-line firmware updater, with packages pexpect and argparse
+ - Python to run the command-line firmware updater, with packages **pexpect** and **argparse**
 
 Note that at this time, building on Windows systems is not supported.  If someone wants to contribute and maintain the necessary pieces that would be wonderful.
 
