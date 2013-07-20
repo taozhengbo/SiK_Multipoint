@@ -138,7 +138,11 @@ bootloader(void)
 {
 	uint8_t		c;
 	uint8_t		count, i;
+#ifdef FLASH_BANKS
+	static uint32_t	address;
+#else // FLASH_BANKS
 	static uint16_t	address;
+#endif
 
 	// Wait for a command byte
 	LED_BOOTLOADER = LED_ON;
@@ -178,6 +182,10 @@ bootloader(void)
 	case PROTO_LOAD_ADDRESS:	// set address
 		address = cin();
 		address |= (uint16_t)cin() << 8;
+#ifdef FLASH_BANKS
+		address |= (uint32_t)cin() << 16;
+		address |= (uint32_t)cin() << 24;
+#endif // FLASH_BANKS
 		if (cin() != PROTO_EOC)
 			goto cmd_bad;
 		break;

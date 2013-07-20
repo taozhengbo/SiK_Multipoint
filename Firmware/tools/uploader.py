@@ -7,6 +7,8 @@ import sys, argparse, binascii, serial, glob
 
 class firmware(object):
 	'''Loads a firmware file'''
+	upperaddress = 0x0000
+	bankingDeteted = False;
 
 	# parse a single IntelHex line and obtain the byte array and address
 	def __parseline(self, line):
@@ -18,9 +20,12 @@ class firmware(object):
 		binstr = binascii.unhexlify(hexstr)
 		command = ord(binstr[3])
 		
-		# only type 0 records are interesting
-		if (command == 0):
-			address = (ord(binstr[1]) << 8) + ord(binstr[2])
+		# only type 0 and 4 records are interesting
+		if (command == 4 and ord(binstr[0]) == 0x02 and (ord(binstr[1]) << 8) + ord(binstr[2]) == 0x0000):
+			self.upperaddress = (ord(binstr[4]) << 8) + ord(binstr[5])
+			self.bankingDeteted = True
+		elif (command == 0):
+			address = (ord(binstr[1]) << 8) + ord(binstr[2]) + (self.upperaddress << 16)
 			bytes   = bytearray(binstr[4:])
 			self.__insert(address, bytes)
 
@@ -123,8 +128,16 @@ class uploader(object):
 			self.__getSync()
 
 	# send a LOAD_ADDRESS command
-	def __set_address(self, address):
-		self.__send(uploader.LOAD_ADDRESS
+	def __set_address(self, address, banking):
+		if(banking):
+			self.__send(uploader.LOAD_ADDRESS
+				+ chr(address & 0xff)
+				+ chr((address >> 8) & 0xff)
+				+ chr((address >> 16) & 0xff)
+				+ chr(address >> 24)
+				+ uploader.EOC)
+		else:
+			self.__send(uploader.LOAD_ADDRESS
 				+ chr(address & 0xff)
 				+ chr(address >> 8)
 				+ uploader.EOC)
@@ -171,13 +184,13 @@ class uploader(object):
 
 	# split a sequence into a list of size-constrained pieces
 	def __split_len(self, seq, length):
-    		return [seq[i:i+length] for i in range(0, len(seq), length)]
+		return [seq[i:i+length] for i in range(0, len(seq), length)]
 
 	# upload code
 	def __program(self, fw):
 		code = fw.code()
 		for address in sorted(code.keys()):
-			self.__set_address(address)
+			self.__set_address(address, fw.bankingDeteted)
 			groups = self.__split_len(code[address], uploader.PROG_MULTI_MAX)
 			for bytes in groups:
 				self.__program_multi(bytes)
@@ -186,7 +199,7 @@ class uploader(object):
 	def __verify(self, fw):
 		code = fw.code()
 		for address in sorted(code.keys()):
-			self.__set_address(address)
+			self.__set_address(address, fw.bankingDeteted)
 			groups = self.__split_len(code[address], uploader.READ_MULTI_MAX)
 			for bytes in groups:
 				if (not self.__verify_multi(bytes)):
@@ -280,4 +293,6 @@ for port in glob.glob(args.port):
 		sys.exit(1)
 	id, freq = up.identify()
 	print("board %x  freq %x" % (id, freq))
+	if(fw.bankingDeteted):
+		print("Using 32bit addresses")
 	up.upload(fw,args.resetparams)

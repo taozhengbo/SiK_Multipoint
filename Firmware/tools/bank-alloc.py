@@ -125,13 +125,7 @@ def populate(project, modules, segment_rules, bins):
 
 # Allocate bankable modules to banks according to a simple
 # 'first fit, decreasing' bin packing heuristic.
-def bin_pack(modules, bins, offset, log):
-	if offset > 0:
-		if offset > 1024:
-			bins['HOME'][1] -= offset
-		else:
-			bins['HOME'][1] -= offset * 1024
-
+def bin_pack(modules, bins, log):
 	# Sort by size, descending, in=place
 	modules.sort(key=operator.itemgetter(1), reverse=True)
 
@@ -191,13 +185,6 @@ if ext == '.c':
 	exit()
 
 # Bin-Packing
-offset = 0
-if len(sys.argv) > 3 and sys.argv[3] is not None:
-	try:
-		offset = int(sys.argv[3], 0)
-	except ValueError:
-		pass
-
 sizes = {'total': 0, 'bankable': 0, 'user': 0, 'libs': 0}
 
 # Name : [Allocated, capacity, start_addr]
@@ -229,9 +216,34 @@ for bin_id in ['BANK1', 'BANK2', 'BANK3', 'BANK4', 'BANK5', 'BANK6', 'BANK7']:
 		print ", " + bin_id + "=" + str(bins[bin_id][0]),
 print
 
+# Account for offset
+offset = 0
+if len(sys.argv) > 3 and sys.argv[3] is not None:
+	try:
+		offset = int(sys.argv[3], 0)
+		if offset > 1023:
+			bins['HOME'][1] -= offset
+		else:
+			bins['HOME'][1] -= offset * 1024
+	except ValueError:
+		pass
+
+for x in range(1, 8):
+	if len(sys.argv) > (3+x) and sys.argv[3+x] is not None:
+		try:
+			offset = int(sys.argv[3+x], 0)
+			if offset > 1023:
+				bins['BANK%d'%x][1] -= offset
+			else:
+				bins['BANK%d'%x][1] -= offset * 1024
+		except ValueError:
+			pass
+	else:
+		break
+
 # Open a log file
 of = open(basename + '.banks', 'w')
-pack = bin_pack(modules, bins, offset, of)
+pack = bin_pack(modules, bins, of)
 of.close()
 
 print "----------------------------------------"

@@ -46,23 +46,22 @@
 #define FLASH_APP_START		0x0400		// 1 page reserved for bootloader
 
 #ifdef BOARD_rfd900u
-// WARNING You need to select Bank 3 for these address to work.
-#define FLASH_INFO_PAGE		0xFC00		// 1 page reserved for bootloader
-#define FLASH_LOCK_BYTE		0xFFFF
-#define FLASH_BANKS			4
-#else  // BOARD_rfd900u
+// WARNING You need to select Bank 3 for these address to work. (p125)
+#define FLASH_INFO_PAGE		0xFC00		// 1 page reserved for bootloader (In Bank3)
+#define FLASH_LOCK_BYTE		0xFFFF		// Bank3
+#define FLASH_SCRATCH		0xF800		// We don't have a scratch page so lets define one in code space (bank3).
+#define FLASH_BANKS			3			// Home Bank1 Bank2 Bank3
+#define FLASH_SIGNATURE_BYTES	(FLASH_SCRATCH - 2) // Location of the flash signature
+#else  // BOARD_rfd900u (p144)
 #define FLASH_INFO_PAGE		0xF800		// 1 page reserved for bootloader
 #define FLASH_LOCK_BYTE		0xFBFF
+#define FLASH_SIGNATURE_BYTES	(FLASH_INFO_PAGE - 2) // Location of the flash signature
 #endif // BOARD_rfd900u
 
 // Anticipated flash signature bytes
 //
 #define FLASH_SIG0	0x3d
 #define FLASH_SIG1	0xc2
-
-// Location of the flash signature
-//
-#define FLASH_SIGNATURE_BYTES	(FLASH_INFO_PAGE - 2)
 
 // Bootloader patchbay for frequency code
 //
