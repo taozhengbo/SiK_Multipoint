@@ -253,7 +253,11 @@ param_load(void)
 __critical {
 	__pdata uint8_t		i;
 	__pdata uint16_t	sum;
-
+#ifdef INCLUDE_ENCRYPTION
+	__pdata uint16_t	sumexp;
+	__pdata uint8_t		val;
+#endif
+	
 	// start with defaults
 	for (i = 0; i < PARAM_MAX; i++) {
 		parameter_values[i] = parameter_info[i].default_value;
@@ -281,6 +285,22 @@ __critical {
 		}
 	}
 
+#ifdef INCLUDE_ENCRYPTION
+	// write encryption key
+	val = parameter_values[PARAM_ENCRYPTION]/8;
+	
+	for(i=val; i>0; i--) {
+		// Store the key at the end of the flash page..
+		encryption_key[i-1] = flash_read_scratch(1022-i);
+	}
+		
+	sum = flash_read_scratch(1022)<<8 | flash_read_scratch(1023);
+	sumexp = crc16(val, ((__xdata uint8_t *)encryption_key));
+	// WTF Is this overflowing!!!!!!!
+//	if (sum != 0)//sumexp)
+//		return false;
+#endif
+	
 	return true;
 }
 
@@ -289,6 +309,9 @@ param_save(void)
 __critical {
 	__pdata uint8_t		i;
 	__pdata uint16_t	sum;
+#ifdef INCLUDE_ENCRYPTION
+	__pdata uint8_t		val;
+#endif
 
 	// tag parameters with the current format
 	parameter_values[PARAM_FORMAT] = PARAM_FORMAT_CURRENT;
@@ -307,6 +330,20 @@ __critical {
 	// write checksum
 	flash_write_scratch(i+1, sum>>8);
 	flash_write_scratch(i+2, sum&0xFF);
+	
+#ifdef INCLUDE_ENCRYPTION
+	// write encryption key
+	val = parameter_values[PARAM_ENCRYPTION]/8;
+	
+	for(i=val; i>0; i--) {
+		// Store the key at the end of the flash page..
+		flash_write_scratch(1022-i, encryption_key[i-1]);
+	}
+	
+	sum = crc16(val, ((__xdata uint8_t *)encryption_key));
+	flash_write_scratch(1022, sum>>8);
+	flash_write_scratch(1023, sum&0xFF);
+#endif
 }
 
 void
