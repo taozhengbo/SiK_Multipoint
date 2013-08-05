@@ -23,14 +23,15 @@ HOME main.c
 
 BANK1 rtc.c
 BANK1 printfl.c
-BANK1 packet.c
 
 BANK2 mavlink.c
+BANK2 at.c
 
-BANK3 at.c
+BANK3 packet.c
 BANK3 golay.c
 BANK3 parameters.c
 BANK3 crc.c
+BANK3 aesEncrypt.c
 
 # freq_hooping needs to be in the same bank as tdm (due to __nonbanked to save space)
 BANK3 freq_hopping.c

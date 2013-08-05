@@ -70,6 +70,9 @@ __code const struct parameter_info {
 /*16*/  {"NODEDESTINATION", 65535},
 /*17*/  {"SYNCANY",  0}, // The amount of nodes in the network, this may could become auto discovery later.
 /*18*/  {"NODECOUNT",  2}, // The amount of nodes in the network, this may could become auto discovery later.
+#ifdef INCLUDE_ENCRYPTION
+        {"ENCRYPTION", 0}, // no Enycryption (0), 128 or 256 bit key
+#endif
 };
 
 /// In-RAM parameter store.
@@ -79,6 +82,11 @@ __code const struct parameter_info {
 /// page anyway.
 ///
 __xdata param_t	parameter_values[PARAM_MAX];
+
+#ifdef INCLUDE_ENCRYPTION
+// -- TODO -- Read and write from flash
+__xdata uint8_t encryption_key[32]; // Storage for 256bits
+#endif
 
 static bool
 param_check(__pdata enum ParamID id, __data uint32_t val)
@@ -132,7 +140,11 @@ param_check(__pdata enum ParamID id, __data uint32_t val)
 			if (val > 1)
 				return false;
 			break;
-
+#ifdef INCLUDE_ENCRYPTION
+		case PARAM_ENCRYPTION:
+			if(val != 0 || val != 128 || val != 192 || val != 256)
+				return false;
+#endif
 		default:
 			// no sanity check for this value
 			break;
@@ -217,6 +229,24 @@ param_get(__data enum ParamID param)
 		return 0;
 	return parameter_values[param];
 }
+
+#ifdef INCLUDE_ENCRYPTION
+__xdata uint8_t* param_encryptkey_get(void)
+{
+	return encryption_key;
+}
+
+uint8_t param_encryptkey_set(__xdata uint8_t *key)
+{
+	__pdata uint8_t i;
+	__pdata uint8_t val = parameter_values[PARAM_ENCRYPTION]/8;
+	
+	for(i=0; i<val; i++) {
+		encryption_key[i] = key[i];
+	}
+	return *key;
+}
+#endif
 
 bool
 param_load(void)

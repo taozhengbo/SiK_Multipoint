@@ -65,6 +65,9 @@ enum ParamID {
         PARAM_NODEDESTINATION,// packet destination
         PARAM_SYNCANY,        // Let this node sync from any in the network not just the base
         PARAM_NODECOUNT,      // number of sequential nodes in the network
+#ifdef INCLUDE_ENCRYPTION
+		PARAM_ENCRYPTION,     // no Enycryption (0), 128 or 256 bit key
+#endif
         PARAM_MAX             // must be last
 };
 
@@ -132,6 +135,11 @@ extern void param_print(__data uint8_t id);
 
 /// convenient routine to constrain parameter values
 uint32_t constrain(__pdata uint32_t v, __pdata uint32_t min, __pdata uint32_t max);
+
+#ifdef INCLUDE_ENCRYPTION
+__xdata uint8_t* param_encryptkey_get(void);
+uint8_t param_encryptkey_set(__xdata uint8_t *key);
+#endif
 
 #ifdef BOARD_rfd900a
 extern bool calibration_set(uint8_t idx, uint8_t value) __reentrant;

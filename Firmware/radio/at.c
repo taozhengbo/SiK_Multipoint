@@ -35,7 +35,6 @@
 #include "radio.h"
 #include "tdm.h"
 
-
 // canary data for ram wrap. It is in at.c as the compiler
 // assigns addresses in alphabetial order and we want this at a low
 // address
@@ -62,6 +61,7 @@ static void	at_i(void);
 static void	at_s(void);
 static void	at_ampersand(void);
 static void	at_plus(void);
+static void at_tilde(void);
 
 #pragma save
 #pragma nooverlay
@@ -212,6 +212,36 @@ at_timer(void)
 }
 #pragma restore
 
+uint8_t read_hex_nibble(const uint8_t c) __reentrant __nonbanked
+{
+    if ((c >='0') && (c <= '9'))
+    {
+        return c - '0';
+    }
+    else if ((c >='A') && (c <= 'F'))
+    {
+        return c - 'A' + 10;
+    }
+    else if ((c >='a') && (c <= 'f'))
+    {
+        return c - 'a' + 10;
+    }
+    else
+    {
+        printf("[%u] read_hex_nibble: Error char not in supported range",nodeId);
+        return 0;
+    }
+}
+
+uint8_t read_hex_byte(const uint8_t *buf) __reentrant __nonbanked
+{
+    uint8_t result;
+	
+    result = read_hex_nibble(buf[0]) << 4;
+    result += read_hex_nibble(buf[1]);
+    return result;
+}
+
 static uint32_t
 at_parse_number() __reentrant __nonbanked
 {
@@ -275,6 +305,9 @@ at_command(void)
 				break;
 			case '+':
 				at_plus();
+				break;
+			case '~':
+				at_tilde();
 				break;
 			case 'I':
 				at_i();
@@ -441,7 +474,7 @@ at_ampersand(void) __nonbanked
 }
 
 static void
-at_plus(void)
+at_plus(void) __nonbanked
 {
 #ifdef BOARD_rfd900a
 	__pdata uint8_t		creg;
@@ -493,5 +526,35 @@ at_plus(void)
 		return;
 	}
 #endif //BOARD_rfd900a
+	at_error();
+}
+
+static void
+at_tilde(void) __nonbanked
+{
+#ifdef INCLUDE_ENCRYPTION
+	__pdata uint8_t		i=0;
+	__pdata uint32_t	val = param_get(PARAM_ENCRYPTION)/8;
+	__xdata uint8_t		encryption_key[32]; // Storage for 256bits
+	
+	if(at_cmd[3] != '=' || val == 0)
+	{
+		at_error();
+		return;
+	}
+	printf("%d,%f",i,encryption_key);
+	for(i=0; i<val; i++)
+	{
+		// The hex number starts on the 4th char
+		// For each 8bits we need to read 2 chars
+		encryption_key[i] = read_hex_byte(at_cmd+4+(i*2));
+	}
+
+	if(param_encryptkey_set(encryption_key))
+	{
+		at_ok();
+		return;
+	}
+#endif // INCLUDE_ENCRYPTION
 	at_error();
 }

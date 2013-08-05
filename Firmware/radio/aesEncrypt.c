@@ -58,7 +58,7 @@ CTR_EncryptDecrypt (uint8_t operation,
 	UU16 length;                        // Length in bytes for all blocks.
 	UU16 addr;                          // Union used to access pointer bytes.
 	
-	uint8_t keyLength;                       // Used to calculate key length in bytes.
+	__pdata uint8_t keyLength;                       // Used to calculate key length in bytes.
 	
 	// Check first for valid operation.
 	if((operation == DECRYPTION_UNDEFINED)||(operation >= ENCRYPTION_UNDEFINED))
@@ -288,8 +288,8 @@ CTR_EncryptDecrypt (uint8_t operation,
 //-----------------------------------------------------------------------------
 void IncrementCounter (VARIABLE_SEGMENT_POINTER(counter, uint8_t, SEG_XDATA))
 {
-	uint8_t i;
-	uint8_t x;
+	__pdata uint8_t i;
+	__pdata uint8_t x;
 	
 	i = 16;
 	counter += 16;					// point to end of data
@@ -304,6 +304,7 @@ void IncrementCounter (VARIABLE_SEGMENT_POINTER(counter, uint8_t, SEG_XDATA))
 	}  while(--i);					// DJNZ
 }
 #else // INCLUDE_ENCRYPTION
+// Dummpy function to stop the compiler complaining when this file is not used
 void noEncryption() {}
 
 #endif // INCLUDE_ENCRYPTION

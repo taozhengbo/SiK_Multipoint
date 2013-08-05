@@ -43,8 +43,13 @@
 #define DMA_TRANSFERS_USE_IDLE
 #define INCLUDE_ENCRYPTION
 
-uint8_t CTR_EncryptDecrypt (uint8_t operation, uint8_t __xdata *plainText, uint8_t __xdata *cipherText,
-							uint8_t __xdata *counter, uint8_t __xdata *encryptionKey, uint16_t blocks);
+uint8_t
+CTR_EncryptDecrypt (uint8_t operation,
+					VARIABLE_SEGMENT_POINTER(plainText, uint8_t, SEG_XDATA),
+					VARIABLE_SEGMENT_POINTER(cipherText, uint8_t, SEG_XDATA),
+					VARIABLE_SEGMENT_POINTER(counter, uint8_t, SEG_XDATA),
+					VARIABLE_SEGMENT_POINTER(encryptionKey, uint8_t, SEG_XDATA),
+					uint16_t blocks);
 
 //-----------------------------------------------------------------------------
 // enum used for ENCRYPT_DECRYPT_AND_SIZE
