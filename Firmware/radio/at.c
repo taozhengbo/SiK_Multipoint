@@ -306,9 +306,6 @@ at_command(void)
 			case '+':
 				at_plus();
 				break;
-			case '~':
-				at_tilde();
-				break;
 			case 'I':
 				at_i();
 				break;
@@ -524,37 +521,31 @@ at_plus(void) __nonbanked
 			at_error();
 		}
 		return;
+	case 'E': // AT+E= Encyrption key for the radio
+#ifdef INCLUDE_ENCRYPTION
+			__pdata uint8_t		i=0;
+			__pdata uint8_t		val = (uint8_t)(param_get(PARAM_ENCRYPTION)/8);
+			
+			if(at_cmd[4] != '=' || val == 0)
+			{
+				at_error();
+				return;
+			}
+			printf("%d,%f",i,encryption_key);
+			for(i=0; i<val; i++)
+			{
+				// The hex number starts on the 5th char
+				// For each 8bits we need to read 2 chars
+				EncryptionKey[i] = read_hex_byte(at_cmd+5+(i*2));
+			}
+			
+			if(param_encryptkey_set(encryption_key))
+			{
+				at_ok();
+				return;
+			}
+#endif // INCLUDE_ENCRYPTION
 	}
 #endif //BOARD_rfd900a
-	at_error();
-}
-
-static void
-at_tilde(void) __nonbanked
-{
-#ifdef INCLUDE_ENCRYPTION
-	__pdata uint8_t		i=0;
-	__pdata uint32_t	val = param_get(PARAM_ENCRYPTION)/8;
-	__xdata uint8_t		encryption_key[32]; // Storage for 256bits
-	
-	if(at_cmd[3] != '=' || val == 0)
-	{
-		at_error();
-		return;
-	}
-	printf("%d,%f",i,encryption_key);
-	for(i=0; i<val; i++)
-	{
-		// The hex number starts on the 4th char
-		// For each 8bits we need to read 2 chars
-		encryption_key[i] = read_hex_byte(at_cmd+4+(i*2));
-	}
-
-	if(param_encryptkey_set(encryption_key))
-	{
-		at_ok();
-		return;
-	}
-#endif // INCLUDE_ENCRYPTION
 	at_error();
 }

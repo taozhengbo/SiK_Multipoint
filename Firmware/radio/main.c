@@ -125,6 +125,10 @@ main(void)
 	if (!radio_receiver_on()) {
 		panic("failed to enable receiver");
 	}
+
+#ifdef INCLUDE_ENCRYPTION
+	aesEncrypt_init();
+#endif // INCLUDE_ENCRYPTION
 	
 #if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
 	// 0x40 = Enable Watchdog

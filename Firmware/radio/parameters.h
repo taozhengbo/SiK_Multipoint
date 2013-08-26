@@ -138,7 +138,8 @@ uint32_t constrain(__pdata uint32_t v, __pdata uint32_t min, __pdata uint32_t ma
 
 #ifdef INCLUDE_ENCRYPTION
 __xdata uint8_t* param_encryptkey_get(void);
-uint8_t param_encryptkey_set(__xdata uint8_t *key);
+void param_encryptkey_set(__xdata uint8_t *key);
+extern SEGMENT_VARIABLE (EncryptionKey[32], U8, SEG_XDATA);
 #endif
 
 #ifdef BOARD_rfd900a

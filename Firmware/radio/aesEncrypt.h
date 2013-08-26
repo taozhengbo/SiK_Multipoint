@@ -43,13 +43,24 @@
 #define DMA_TRANSFERS_USE_IDLE
 #define INCLUDE_ENCRYPTION
 
-uint8_t
-CTR_EncryptDecrypt (uint8_t operation,
-					VARIABLE_SEGMENT_POINTER(plainText, uint8_t, SEG_XDATA),
-					VARIABLE_SEGMENT_POINTER(cipherText, uint8_t, SEG_XDATA),
-					VARIABLE_SEGMENT_POINTER(counter, uint8_t, SEG_XDATA),
-					VARIABLE_SEGMENT_POINTER(encryptionKey, uint8_t, SEG_XDATA),
-					uint16_t blocks);
+#include "radio.h"
+
+//-----------------------------------------------------------------------------
+// typedefs for key size and status
+//-----------------------------------------------------------------------------
+typedef U8 GENERATE_DECRYPTION_KEY_SIZE;
+typedef U8 GENERATE_DECRYPTION_KEY_STATUS;
+
+//=============================================================================
+// Function Prototypes (API)
+//=============================================================================
+
+void aesEncrypt_init();
+
+uint8_t aesEncryptDecrypt(__pdata uint8_t operation,
+						  VARIABLE_SEGMENT_POINTER(plainText, uint8_t, SEG_XDATA),
+						  VARIABLE_SEGMENT_POINTER(cipherText, uint8_t, SEG_XDATA),
+						  __pdata uint16_t blocks);
 
 //-----------------------------------------------------------------------------
 // enum used for ENCRYPT_DECRYPT_AND_SIZE
@@ -64,6 +75,23 @@ enum ENCRYPT_DECRYPT_AND_SIZE_Enum
 	ENCRYPTION_192_BITS,                // 0x05
 	ENCRYPTION_256_BITS,                // 0x06
 	ENCRYPTION_UNDEFINED                // 0x07
+};
+
+enum ENCRYPT_DECRYPT_Enum
+{
+	DECRYPTION = 0,
+	ENCRYPTION
+};
+
+//-----------------------------------------------------------------------------
+// enum used for KEY_SIZE
+//-----------------------------------------------------------------------------
+enum KEY_SIZE_Enum
+{
+	KEY_SIZE_128_BITS = 0,             // 0x00
+	KEY_SIZE_192_BITS,                 // 0x01
+	KEY_SIZE_256_BITS,                 // 0x02
+	KEY_SIZE_UNDEFINED                 // 0x03
 };
 
 //-----------------------------------------------------------------------------

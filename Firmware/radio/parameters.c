@@ -84,8 +84,7 @@ __code const struct parameter_info {
 __xdata param_t	parameter_values[PARAM_MAX];
 
 #ifdef INCLUDE_ENCRYPTION
-// -- TODO -- Read and write from flash
-__xdata uint8_t encryption_key[32]; // Storage for 256bits
+SEGMENT_VARIABLE (EncryptionKey[32], U8, SEG_XDATA); // Storage for 256bits
 #endif
 
 static bool
@@ -233,19 +232,18 @@ param_get(__data enum ParamID param)
 #ifdef INCLUDE_ENCRYPTION
 __xdata uint8_t* param_encryptkey_get(void)
 {
-	return encryption_key;
+	return EncryptionKey;
 }
 
-uint8_t param_encryptkey_set(__xdata uint8_t *key)
-{
-	__pdata uint8_t i;
-	__pdata uint8_t val = parameter_values[PARAM_ENCRYPTION]/8;
-	
-	for(i=0; i<val; i++) {
-		encryption_key[i] = key[i];
-	}
-	return *key;
-}
+//void param_encryptkey_set(__xdata uint8_t *key)
+//{
+//	__pdata uint8_t i;
+//	__pdata uint8_t val = parameter_values[PARAM_ENCRYPTION]/8;
+//	
+//	for(i=0; i<val; i++) {
+//		encryption_key[i] = key[i];
+//	}
+//}
 #endif
 
 bool
@@ -291,11 +289,11 @@ __critical {
 	
 	for(i=val; i>0; i--) {
 		// Store the key at the end of the flash page..
-		encryption_key[i-1] = flash_read_scratch(1022-i);
+		EncryptionKey[i-1] = flash_read_scratch(1022-i);
 	}
 		
 	sum = flash_read_scratch(1022)<<8 | flash_read_scratch(1023);
-	sumexp = crc16(val, ((__xdata uint8_t *)encryption_key));
+	sumexp = crc16(val, ((__xdata uint8_t *)EncryptionKey));
 	// WTF Is this overflowing!!!!!!!
 //	if (sum != 0)//sumexp)
 //		return false;
@@ -337,10 +335,10 @@ __critical {
 	
 	for(i=val; i>0; i--) {
 		// Store the key at the end of the flash page..
-		flash_write_scratch(1022-i, encryption_key[i-1]);
+		flash_write_scratch(1022-i, EncryptionKey[i-1]);
 	}
 	
-	sum = crc16(val, ((__xdata uint8_t *)encryption_key));
+	sum = crc16(val, ((__xdata uint8_t *)EncryptionKey));
 	flash_write_scratch(1022, sum>>8);
 	flash_write_scratch(1023, sum&0xFF);
 #endif
