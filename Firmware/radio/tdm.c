@@ -329,7 +329,7 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 		
 		// REMEMBER nodeCount is set one higher than the user has set, this is to add sync to the sequence
 		// nodeTransmitSeq points to the next slot so we also have to remove one from here
-		if(!set_yield) {
+		if(set_yield == YIELD_GET) {
 			if((nodeTransmitSeq != 0 && (lastTransmitWindow & 0x7FFF) == ((nodeTransmitSeq-1) % (nodeCount-1))) || 
 			   (nodeTransmitSeq == 0 && (lastTransmitWindow & 0x7FFF) == (nodeCount-2)) ) {
 				return YIELD_TRANSMIT;
@@ -345,16 +345,19 @@ tdm_yield_update(__pdata uint8_t set_yield, __pdata uint8_t no_data)
 			}
 			
 			// Make sure all nodes so far have yielded to us..
+			// Make sure the node waits for a random amount of time..
 			if (lastTransmitWindow < 0x8000 && trailer.nodeid == ((lastTransmitWindow+1) % (nodeCount-1))) {
 				lastTransmitWindow = trailer.nodeid;
-				transmit_wait = packet_latency;
+				transmit_wait = packet_latency + ((uint16_t)rand())%(packet_latency*2);
 			}
 			// Ensure that other nodes get a chance to respond before we take their slot.
 			else {
 				lastTransmitWindow = trailer.nodeid | 0x8000;
 				// This gives prefrance to a lower nodeId, need to think of a better way of yielding a slot
-				transmit_wait = packet_latency*nodeId;
+				transmit_wait = (packet_latency*(nodeId+1) + ((uint16_t)rand())%(packet_latency*(nodeId+2)));
 			}
+			// We can't have a delay more than 4* packet_lantency..
+			transmit_wait %= (packet_latency*4);
 		}
 		// Change the Window so we don't send any data without politely asking first
 		else {
