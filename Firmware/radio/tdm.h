@@ -61,6 +61,9 @@ extern void tdm_init(void);
 /// tdm main loop
 extern void tdm_serial_loop(void);
 
+/// tdm sync state
+extern bool tdm_state_sync();
+
 /// setup a 16 bit node count
 extern void tdm_set_node_count(__pdata uint16_t count);
 
