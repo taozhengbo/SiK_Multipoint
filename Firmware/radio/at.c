@@ -384,6 +384,16 @@ at_i(void) __nonbanked
 	case '7':
 		tdm_show_rssi();
 		return;
+	case '8':
+		if (nodeId == 0)
+		{
+			printf("[%u] Sync: Base\n", nodeId);
+		}
+		else
+		{
+			printf("[%u] Sync: %u\n", nodeId, tdm_state_sync());
+		}
+		return;
 	default:
 		at_error();
 		return;

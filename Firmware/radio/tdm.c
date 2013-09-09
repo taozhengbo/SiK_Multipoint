@@ -1027,6 +1027,12 @@ tdm_serial_loop(void)
 	}
 }
 
+bool
+tdm_state_sync()
+{
+	return received_sync;
+}
+
 // setup a 16 bit node count
 //
 void
