@@ -44,7 +44,7 @@
 //#define DEBUG_PINS_TX_RX_STATE // P2.3
 
 // Sync Logic on Pin // P2.6
-#define TDM_SYNC_LOGIC
+//#define TDM_SYNC_LOGIC
 
 // Hard coded for the inital testing, need to figure out how this could be changed on the fly later down the track
 // Maybe a new command seprate from the AT? Without entering +++ mode? more thought needed

@@ -68,6 +68,7 @@ enum ParamID {
         PARAM_MAX             // must be last
 };
 
+
 #define PARAM_FORMAT_CURRENT	0x1AUL	//< current parameter format ID
 
 /// Parameter type.
@@ -75,7 +76,7 @@ enum ParamID {
 /// All parameters have this type.
 ///
 typedef uint32_t	param_t;
-
+extern  struct pins_user_info pin_values[];
 /// Set a parameter
 ///
 /// @note Parameters are not saved until param_save is called.

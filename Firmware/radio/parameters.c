@@ -78,7 +78,8 @@ __code const struct parameter_info {
 /// hold all the parameters when we're rewriting the scratchpad
 /// page anyway.
 ///
-__xdata param_t	parameter_values[PARAM_MAX];
+__xdata param_t	 parameter_values[PARAM_MAX];
+pins_user_info_t pin_values[PIN_MAX()];
 
 static bool
 param_check(__pdata enum ParamID id, __data uint32_t val)
