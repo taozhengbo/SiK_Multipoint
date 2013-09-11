@@ -486,7 +486,7 @@ at_ampersand(void) __nonbanked
 }
 
 static void
-at_p (void)
+at_p (void) __nonbanked
 {
 	__pdata uint8_t pinId;
 	if(at_cmd[4] != '=' || !isdigit(at_cmd[5]))
@@ -524,7 +524,7 @@ at_p (void)
 }
 
 static void
-at_plus(void)
+at_plus(void) __nonbanked
 {
 #ifdef BOARD_rfd900a
 	__pdata uint8_t		creg;
