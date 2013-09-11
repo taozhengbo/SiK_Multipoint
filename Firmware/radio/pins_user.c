@@ -34,6 +34,25 @@
 
 #include "pins_user.h"
 
+
+// Pin rfd900a  Mapping
+#ifdef BOARD_rfd900a
+
+//P2MDOUT
+
+__code const struct pins_user_map {
+	uint8_t port;
+	uint8_t	pin;
+} pins_user_map[] = {
+	{2, 3}, // 0 - P2.3
+	{2, 2}, // 1 - P2.2
+	{2, 1}, // 2 - P2.1
+	{2, 0}, // 3 - P2.0
+	{2, 6}, // 4 - P2.6
+	{0, 1}, // 5 - P0.1
+};
+#endif
+
 //void
 //pins_user_init()
 //{
@@ -51,6 +70,49 @@ pins_user_set_io(__pdata uint8_t pin, __pdata uint8_t in_out)
 	{
 		pin_values[pin].output = in_out;
 		pin_values[pin].pin_mirror = PIN_NULL;
+		
+//      // Analog support for later implemetation?
+//		SFRPAGE	= LEGACY_PAGE;
+//		
+//		switch(pins_user_map[pin].port)
+//		{
+//			case 0:
+//				if(in_out)
+//				{
+//					P0MDIN |= (1<<pins_user_map[pin].pin);
+//				}
+//				else
+//				{
+//					P0MDIN &= ~(1<<pins_user_map[pin].pin);
+//				}
+//				break;
+//				
+//			case 1:
+//				if(in_out)
+//				{
+//					P1MDIN |= (1<<pins_user_map[pin].pin);
+//				}
+//				else
+//				{
+//					P1MDIN &= ~(1<<pins_user_map[pin].pin);
+//				}
+//				break;
+//				
+//			case 2:
+//				if(in_out)
+//				{
+//					P2MDIN |= (1<<pins_user_map[pin].pin);
+//				}
+//				else
+//				{
+//					P2MDIN &= ~(1<<pins_user_map[pin].pin);
+//				}
+//				break;
+//				
+//			default:
+//				return false;
+//		}
+		pins_user_set_direction(pin, PIN_LOW);
 		return true;
 	}
 	return false;
@@ -59,67 +121,73 @@ pins_user_set_io(__pdata uint8_t pin, __pdata uint8_t in_out)
 bool
 pins_user_set_direction(__pdata uint8_t pin, __pdata uint8_t high_low)
 {
-#if PIN_MAX() > 0
 	if(PIN_MAX() > pin && pin_values[pin].output == PIN_OUTPUT && pin_values[pin].pin_mirror == PIN_NULL)
 	{
-		high_low = high_low>0?true:false;
-		switch (pin) {
+		switch(pins_user_map[pin].port)
+		{
 			case 0:
-				PIN_0 = high_low;
+				if(high_low)
+				{
+					P0 |= (1<<pins_user_map[pin].pin);
+				}
+				else
+				{
+					P0 &= ~(1<<pins_user_map[pin].pin);
+				}
 				break;
-#if PIN_MAX() > 1
+			
 			case 1:
-				PIN_1 = high_low;
+				if(high_low)
+				{
+					P1 |= (1<<pins_user_map[pin].pin);
+				}
+				else
+				{
+					P1 &= ~(1<<pins_user_map[pin].pin);
+				}
 				break;
-#endif // PIN_1
-#if PIN_MAX() > 2
+				
 			case 2:
-				PIN_2 = high_low;
+				if(high_low)
+				{
+					P2 |= (1<<pins_user_map[pin].pin);
+				}
+				else
+				{
+					P2 &= ~(1<<pins_user_map[pin].pin);
+				}
 				break;
-#endif // PIN_2
-#if PIN_MAX() > 3
-			case 3:
-				PIN_3 = high_low;
-				break;
-#endif // PIN_3
-#if PIN_MAX() > 4
-			case 4:
-				PIN_4 = high_low;
-				break;
-#endif // PIN_4
-#if PIN_MAX() > 5
-			case 5:
-				PIN_5 = high_low;
-				break;
-#endif // PIN_5
-#if PIN_MAX() > 6
-			case 6:
-				PIN_6 = high_low;
-				break;
-#endif // PIN_6
-#if PIN_MAX() > 7
-			case 7:
-				PIN_7 = high_low;
-				break;
-#endif // PIN_7
-#if PIN_MAX() > 8
-			case 8:
-				PIN_8 = high_low;
-				break;
-#endif // PIN_8
-#if PIN_MAX() > 9
-			case 9:
-				PIN_9 = high_low;
-				break;
-#endif // PIN_9
+				
 			default:
 				return false;
-				break;
 		}
 		return true;
 	}
-#else // PIN_0
-	printf("No User Defined Pins %d:%d\n", pin, high_low>0?true:false);
-#endif // PIN_0
 	return false;
+}
+
+uint8_t
+pins_user_get_direction(__pdata uint8_t pin)
+{
+	if(PIN_MAX() > pin && pin_values[pin].output == PIN_INPUT)
+	{
+		switch(pins_user_map[pin].port)
+		{
+			case 0:
+				return P0 & (1<<pins_user_map[pin].pin)?1:0;
+				break;
+				
+			case 1:
+				return P1 & (1<<pins_user_map[pin].pin)?1:0;
+				break;
+				
+			case 2:
+				return P2 & (1<<pins_user_map[pin].pin)?1:0;
+				break;
+				
+			default:
+				return 0x55;
+		}
+	}
+	return 0x55;
 }
