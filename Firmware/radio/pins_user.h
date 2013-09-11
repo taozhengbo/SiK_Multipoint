@@ -39,19 +39,13 @@
 
 // Pin rfd900a  Mapping
 #ifdef BOARD_rfd900a
-SBIT (PIN_0, SFR_P2, 3);
-SBIT (PIN_1, SFR_P2, 2);
-SBIT (PIN_2, SFR_P2, 1);
-SBIT (PIN_3, SFR_P2, 0);
-SBIT (PIN_4, SFR_P2, 6);
-SBIT (PIN_5, SFR_P0, 1);
 #define PINS_USER_MAX 6
 #endif
 
 #define PINS_ABS_MAX 10
 #define PIN_MAX() (PINS_USER_MAX < PINS_ABS_MAX ? PINS_USER_MAX : PINS_ABS_MAX)
 
-enum pin_state { PIN_OUTPUT=true, PIN_INPUT=false, PIN_ON=true, PIN_OFF=false, PIN_NULL=0xff };
+enum pin_state { PIN_OUTPUT=true, PIN_INPUT=false, PIN_HIGH=true, PIN_LOW=false, PIN_NULL=0xff };
 
 /// In-ROM parameter info table. Changed by ATP commands
 ///
@@ -65,5 +59,6 @@ typedef struct pins_user_info {
 
 extern bool pins_user_set_io(__pdata uint8_t pin, __pdata uint8_t in_out);
 extern bool pins_user_set_direction(__pdata uint8_t pin, __pdata uint8_t high_low);
+extern uint8_t pins_user_get_direction(__pdata uint8_t pin);
 
 #endif	// _PINS_H_

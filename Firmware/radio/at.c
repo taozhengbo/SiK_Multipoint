@@ -506,6 +506,12 @@ at_p (void) __nonbanked
 
 		// Need to figure out how to set pins to Input/Output
 		case 'I':
+			pins_user_set_io(pinId, PIN_INPUT);
+			break;
+		
+		case 'R':
+			printf("[%u] val:%u\n", nodeId, pins_user_get_direction(pinId));
+			return;
 			break;
 			
 		case 'C':
