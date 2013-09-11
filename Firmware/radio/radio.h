@@ -61,6 +61,7 @@
 #include "serial.h"
 #include "board_info.h"
 #include "aesEncrypt.h"
+#include "pins_user.h"
 #include "parameters.h"
 #include "at.h"
 #include "flash.h"

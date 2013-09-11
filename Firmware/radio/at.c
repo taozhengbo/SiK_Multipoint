@@ -1,6 +1,7 @@
 // -*- Mode: C; c-basic-offset: 8; -*-
 //
 // Copyright (c) 2011 Michael Smith, All Rights Reserved
+// Copyright (c) 2013 Luke Hovington, All Rights Reserved
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
@@ -59,6 +60,7 @@ static void	at_ok(void);
 static void	at_error(void);
 static void	at_i(void);
 static void	at_s(void);
+static void	at_p(void);
 static void	at_ampersand(void);
 static void	at_plus(void);
 static void at_tilde(void);
@@ -309,6 +311,9 @@ at_command(void)
 			case 'I':
 				at_i();
 				break;
+			case 'P':
+				at_p();
+				break;
 			case 'O':		// O -> go online (exit command mode)
 				at_plus_counter = ATP_COUNT_1S;
 				at_mode_active = 0;
@@ -481,7 +486,45 @@ at_ampersand(void) __nonbanked
 }
 
 static void
-at_plus(void) __nonbanked
+at_p (void)
+{
+	__pdata uint8_t pinId;
+	if(at_cmd[4] != '=' || !isdigit(at_cmd[5]))
+	{
+		at_error();
+		return;
+	}
+	
+	pinId = at_cmd[5] - '0';
+
+	switch (at_cmd[3]) {
+			
+		// Set pin to output, turn mirroring off pulling pin to ground
+		case 'O':
+			pins_user_set_io(pinId, PIN_OUTPUT);
+			break;
+
+		// Need to figure out how to set pins to Input/Output
+		case 'I':
+			break;
+			
+		case 'C':
+			if(!isdigit(at_cmd[7]) || !pins_user_set_direction(pinId, (at_cmd[7]-'0')))
+			{
+				at_error();
+				return;
+			}
+			break;
+		default:
+			at_error();
+			return;
+	}
+	
+	at_ok();
+}
+
+static void
+at_plus(void)
 {
 #ifdef BOARD_rfd900a
 	__pdata uint8_t		creg;

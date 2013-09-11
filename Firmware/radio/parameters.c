@@ -81,7 +81,8 @@ __code const struct parameter_info {
 /// hold all the parameters when we're rewriting the scratchpad
 /// page anyway.
 ///
-__xdata param_t	parameter_values[PARAM_MAX];
+__xdata param_t	 parameter_values[PARAM_MAX];
+pins_user_info_t pin_values[PIN_MAX()];
 
 #ifdef INCLUDE_ENCRYPTION
 SEGMENT_VARIABLE (EncryptionKey[32], U8, SEG_XDATA); // Storage for 256bits
