@@ -247,6 +247,9 @@ hardware_init(void)
 	PCA0CN = 0x40;
 #endif
 	XBR2	 =  0x40;		// Crossbar (GPIO) enable
+	
+	// initialise pins for the user
+	pins_user_init();
 }
 
 static void

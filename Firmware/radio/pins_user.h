@@ -43,7 +43,7 @@
 #endif
 
 #define PINS_ABS_MAX 10
-#define PIN_MAX() (PINS_USER_MAX < PINS_ABS_MAX ? PINS_USER_MAX : PINS_ABS_MAX)
+#define PIN_MAX (PINS_USER_MAX < PINS_ABS_MAX ? PINS_USER_MAX : PINS_ABS_MAX)
 
 enum pin_state { PIN_OUTPUT=true, PIN_INPUT=false, PIN_HIGH=true, PIN_LOW=false, PIN_NULL=0xff };
 
@@ -57,6 +57,7 @@ typedef struct pins_user_info {
 
 #define PINS_USER_INFO_DEFAULT {PIN_OUTPUT, PIN_NULL, 0}
 
+extern void pins_user_init(void);
 extern bool pins_user_set_io(__pdata uint8_t pin, __pdata uint8_t in_out);
 extern bool pins_user_set_direction(__pdata uint8_t pin, __pdata uint8_t high_low);
 extern uint8_t pins_user_get_direction(__pdata uint8_t pin);

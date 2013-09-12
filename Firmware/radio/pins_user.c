@@ -34,16 +34,14 @@
 
 #include "pins_user.h"
 
-
-// Pin rfd900a  Mapping
-#ifdef BOARD_rfd900a
-
 //P2MDOUT
 
 __code const struct pins_user_map {
 	uint8_t port;
 	uint8_t	pin;
 } pins_user_map[] = {
+// Pin rfd900a  Mapping
+#ifdef BOARD_rfd900a
 	{2, 3}, // 0 - P2.3
 	{2, 2}, // 1 - P2.2
 	{2, 1}, // 2 - P2.1
@@ -51,22 +49,26 @@ __code const struct pins_user_map {
 	{2, 6}, // 4 - P2.6
 	{0, 1}, // 5 - P0.1
 };
+#else
+};
 #endif
 
-//void
-//pins_user_init()
-//{
-////	// Set the Default pin behaviour
-////#ifdef PIN_0
-////	__pdata struct pins_info* pin_data;
-////	pin_data = param_get_pins();
-////#endif // PIN_0
-//}
+void
+pins_user_init(void)
+{
+	__pdata uint8_t i;
+	// Set the Default pin behaviour
+	for(i=0; i<PIN_MAX; i++)
+	{
+		pins_user_set_io(i, pin_values[i].output);
+		pins_user_set_direction(i, PIN_LOW);
+	}
+}
 
 bool
 pins_user_set_io(__pdata uint8_t pin, __pdata uint8_t in_out)
 {
-	if (PIN_MAX() > pin)
+	if (PIN_MAX > pin)
 	{
 		pin_values[pin].output = in_out;
 		pin_values[pin].pin_mirror = PIN_NULL;
@@ -121,7 +123,7 @@ pins_user_set_io(__pdata uint8_t pin, __pdata uint8_t in_out)
 bool
 pins_user_set_direction(__pdata uint8_t pin, __pdata uint8_t high_low)
 {
-	if(PIN_MAX() > pin && pin_values[pin].output == PIN_OUTPUT && pin_values[pin].pin_mirror == PIN_NULL)
+	if(PIN_MAX > pin && pin_values[pin].output == PIN_OUTPUT && pin_values[pin].pin_mirror == PIN_NULL)
 	{
 		switch(pins_user_map[pin].port)
 		{
@@ -169,7 +171,7 @@ pins_user_set_direction(__pdata uint8_t pin, __pdata uint8_t high_low)
 uint8_t
 pins_user_get_direction(__pdata uint8_t pin)
 {
-	if(PIN_MAX() > pin && pin_values[pin].output == PIN_INPUT)
+	if(PIN_MAX > pin && pin_values[pin].output == PIN_INPUT)
 	{
 		switch(pins_user_map[pin].port)
 		{
