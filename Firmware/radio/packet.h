@@ -69,6 +69,10 @@ extern void packet_set_serial_speed(uint16_t speed);
 ///
 extern void packet_ati5_inject(__pdata uint8_t ati5_id);
 
+/// inject a at packet to be sent when possible
+///
+extern void packet_at_inject(void);
+
 /// inject a packet to be sent when possible
 /// @param buf			buffer to send
 /// @param len			number of bytes

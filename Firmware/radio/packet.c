@@ -373,6 +373,7 @@ packet_is_duplicate(uint8_t len, __xdata uint8_t * __pdata buf, bool is_resend)
 	return false;
 }
 
+// inject a ati5 packet to send when possible
 void
 packet_ati5_inject(__pdata uint8_t ati5_id)
 {
@@ -386,6 +387,22 @@ packet_ati5_inject(__pdata uint8_t ati5_id)
 			last_sent_is_resend = false;
 			injected_packet = true;
 		}
+	}
+}
+
+// inject a at packet to send when possible
+void
+packet_at_inject(void)
+{
+	at_cmd_ready = true;
+	printf_start_capture(last_sent, sizeof(last_sent));
+	at_command();
+	last_sent_len = printf_end_capture();
+	
+	if (last_sent_len > 0)
+	{
+		last_sent_is_resend = false;
+		injected_packet = true;
 	}
 }
 

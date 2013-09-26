@@ -536,13 +536,7 @@ handle_at_command(__pdata uint8_t len)
 	else {
 		// run the AT command, capturing any output to the packet buffer
 		// this reply buffer will be sent at the next opportunity
-		at_cmd_ready = true;
-		printf_start_capture(pbuf, sizeof(pbuf));
-		at_command();
-		len = printf_end_capture();
-		if (len > 0) {
-			packet_inject(pbuf, len);
-		}
+		packet_at_inject();
 	}
 	
 #ifdef WATCH_DOG_ENABLE
