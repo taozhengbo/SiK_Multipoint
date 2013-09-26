@@ -64,6 +64,11 @@ extern void packet_set_max_xmit(uint8_t max);
 ///
 extern void packet_set_serial_speed(uint16_t speed);
 
+/// inject a ati5 packet to be sent when possible
+/// @param ati5_id		id of the parameter to send
+///
+extern void packet_ati5_inject(__pdata uint8_t ati5_id);
+
 /// inject a packet to be sent when possible
 /// @param buf			buffer to send
 /// @param len			number of bytes

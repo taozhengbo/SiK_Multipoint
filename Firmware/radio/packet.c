@@ -373,6 +373,22 @@ packet_is_duplicate(uint8_t len, __xdata uint8_t * __pdata buf, bool is_resend)
 	return false;
 }
 
+void
+packet_ati5_inject(__pdata uint8_t ati5_id)
+{
+	if (ati5_id < PARAM_MAX) {
+		printf_start_capture(last_sent, sizeof(last_sent));
+		param_print(ati5_id);
+		last_sent_len = printf_end_capture();
+		
+		if(last_sent_len>0)
+		{
+			last_sent_is_resend = false;
+			injected_packet = true;
+		}
+	}
+}
+
 // inject a packet to send when possible
 void 
 packet_inject(__xdata uint8_t * __pdata buf, __pdata uint8_t len)

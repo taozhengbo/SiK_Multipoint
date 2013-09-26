@@ -498,18 +498,6 @@ tdm_remote_at(__pdata uint16_t destination)
 	send_at_command_to = destination;
 	send_at_command = true;
 }
-static void ati5_proccess_packet(__pdata uint8_t len)
-{
-	if (ati5_id < PARAM_MAX) {
-		printf_start_capture(pbuf, sizeof(pbuf));
-		param_print(ati5_id);
-		len = printf_end_capture();
-		if (len > 0) {
-			packet_inject(pbuf, len);
-		}
-	}
-	ati5_id++;
-}
 
 // handle an incoming at command from the remote radio
 static void
@@ -543,7 +531,7 @@ handle_at_command(__pdata uint8_t len)
 	// Capture ATI5 and proccess separatly
 	if(len == 4 && at_cmd[2] == (uint8_t)'I' && at_cmd[3] == (uint8_t)'5'){
 		ati5_id=0;
-		ati5_proccess_packet(len);
+		packet_ati5_inject(ati5_id++);
 	}
 	else {
 		// run the AT command, capturing any output to the packet buffer
@@ -875,6 +863,7 @@ tdm_serial_loop(void)
 				// If it's a AT return packet, set the return address
 				if(trailer.command) {
 					nodeDestination = send_at_command_to;
+					packet_ati5_inject(ati5_id++);
 				}
 			}
 		}
@@ -1003,10 +992,6 @@ tdm_serial_loop(void)
 		// start transmitting the packet
 		if (!radio_transmit(len + sizeof(trailer), pbuf, nodeDestination, tdm_state_remaining) && len != 0) {
 			packet_force_resend();
-		}
-
-		if (ati5_id < PARAM_MAX) {
-			ati5_proccess_packet(len);
 		}
 		
 		if (lbt_rssi != 0) {
