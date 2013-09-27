@@ -342,7 +342,7 @@ radio_transmit_simple(__data uint8_t length, __xdata uint8_t * __pdata buf, __pd
 	while ((uint16_t)(timer2_tick() - tstart) < timeout_ticks) {
 		__data uint8_t status;
 
-#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
+#ifdef WATCH_DOG_ENABLE
 		// Reset Watchdog
 		PCA0CPH5 = 0;
 #endif //_BOARD_RFD900A

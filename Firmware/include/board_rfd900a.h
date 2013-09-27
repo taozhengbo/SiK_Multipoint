@@ -71,7 +71,7 @@
 #define BOARD_MINTXPOWER 0		// Minimum transmit power level
 #define BOARD_MAXTXPOWER 30		// Maximum transmit power level
 
-#define WATCH_DOG_ENABLE
+//#define WATCH_DOG_ENABLE
 
 // GPIO definitions (not exported)
 SBIT(LED_RED,	   SFR_P1, 6);

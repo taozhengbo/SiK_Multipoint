@@ -151,6 +151,11 @@ packet_get_next(register uint8_t max_xmit, __xdata uint8_t * __pdata buf)
 {
 	register uint16_t slen;
 	
+#ifdef WATCH_DOG_ENABLE
+	// Kick the Watchdog
+	PCA0CPH5 = 0;
+#endif // WATCH_DOG_ENABLE
+	
 	slen = serial_read_available();
 	if (force_resend ||
 		(feature_opportunistic_resend &&
@@ -388,6 +393,11 @@ packet_ati5_inject(__pdata uint8_t ati5_id)
 			injected_packet = true;
 		}
 	}
+	
+#ifdef WATCH_DOG_ENABLE
+	// Kick the Watchdog
+	PCA0CPH5 = 0;
+#endif // WATCH_DOG_ENABLE
 }
 
 // inject a at packet to send when possible
