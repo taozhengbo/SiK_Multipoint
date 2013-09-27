@@ -126,6 +126,9 @@ main(void)
 		panic("failed to enable receiver");
 	}
 	
+	// initialise pins for the user
+	pins_user_init();
+	
 #ifdef WATCH_DOG_ENABLE
 	// 0x40 = Enable Watchdog
 	PCA0MD |= 0x40;
@@ -247,9 +250,6 @@ hardware_init(void)
 	PCA0CN = 0x40;
 #endif
 	XBR2	 =  0x40;		// Crossbar (GPIO) enable
-	
-	// initialise pins for the user
-	pins_user_init();
 }
 
 static void

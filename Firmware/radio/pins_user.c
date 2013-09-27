@@ -34,7 +34,7 @@
 
 #include "pins_user.h"
 
-//P2MDOUT
+// pin_values defined as extern in parameters
 
 __code const struct pins_user_map {
 	uint8_t port;
@@ -57,73 +57,86 @@ void
 pins_user_init(void)
 {
 	__pdata uint8_t i;
+	
 	// Set the Default pin behaviour
 	for(i=0; i<PIN_MAX; i++)
 	{
 		pins_user_set_io(i, pin_values[i].output);
-		pins_user_set_direction(i, PIN_LOW);
+		pins_user_set_value(i, pin_values[i].pin_dir);
 	}
 }
 
 bool
-pins_user_set_io(__pdata uint8_t pin, __pdata uint8_t in_out)
+pins_user_set_io(__pdata uint8_t pin, bool in_out)
 {
 	if (PIN_MAX > pin)
 	{
 		pin_values[pin].output = in_out;
 		pin_values[pin].pin_mirror = PIN_NULL;
 		
-//      // Analog support for later implemetation?
-//		SFRPAGE	= LEGACY_PAGE;
-//		
-//		switch(pins_user_map[pin].port)
-//		{
-//			case 0:
-//				if(in_out)
-//				{
-//					P0MDIN |= (1<<pins_user_map[pin].pin);
-//				}
-//				else
-//				{
-//					P0MDIN &= ~(1<<pins_user_map[pin].pin);
-//				}
-//				break;
-//				
-//			case 1:
-//				if(in_out)
-//				{
-//					P1MDIN |= (1<<pins_user_map[pin].pin);
-//				}
-//				else
-//				{
-//					P1MDIN &= ~(1<<pins_user_map[pin].pin);
-//				}
-//				break;
-//				
-//			case 2:
-//				if(in_out)
-//				{
-//					P2MDIN |= (1<<pins_user_map[pin].pin);
-//				}
-//				else
-//				{
-//					P2MDIN &= ~(1<<pins_user_map[pin].pin);
-//				}
-//				break;
-//				
-//			default:
-//				return false;
-//		}
-		pins_user_set_direction(pin, PIN_LOW);
+		// Esure we are on the Legacy page (SFR Page 0x0)
+		SFRPAGE	= LEGACY_PAGE;
+		//P0DRV
+		
+		switch(pins_user_map[pin].port)
+		{
+			case 0:
+				if(in_out)
+					P0MDOUT |= (1<<pins_user_map[pin].pin);
+				else
+					P0MDOUT &= ~(1<<pins_user_map[pin].pin);
+				SFRPAGE	= CONFIG_PAGE;
+				if(in_out)
+					P0DRV |= (1<<pins_user_map[pin].pin);
+				else
+					P0DRV &= ~(1<<pins_user_map[pin].pin);
+				break;
+				
+			case 1:
+				if(in_out)
+					P1MDOUT |= (1<<pins_user_map[pin].pin);
+				else
+					P1MDOUT &= ~(1<<pins_user_map[pin].pin);
+				SFRPAGE	= CONFIG_PAGE;
+				if(in_out)
+					P1DRV |= (1<<pins_user_map[pin].pin);
+				else
+					P1DRV &= ~(1<<pins_user_map[pin].pin);
+				break;
+				
+			case 2:
+				if(in_out)
+					P2MDOUT |= (1<<pins_user_map[pin].pin);
+				else
+					P2MDOUT &= ~(1<<pins_user_map[pin].pin);
+				SFRPAGE	= CONFIG_PAGE;
+				if(in_out)
+					P2DRV |= (1<<pins_user_map[pin].pin);
+				else
+					P2DRV &= ~(1<<pins_user_map[pin].pin);
+				break;
+				
+			default:
+				return false;
+		}
+		SFRPAGE	= LEGACY_PAGE;
 		return true;
 	}
 	return false;
 }
 
 bool
-pins_user_set_direction(__pdata uint8_t pin, __pdata uint8_t high_low)
+pins_user_get_io(__pdata uint8_t pin)
 {
-	if(PIN_MAX > pin && pin_values[pin].output == PIN_OUTPUT && pin_values[pin].pin_mirror == PIN_NULL)
+	return pin_values[pin].output;
+}
+
+bool
+pins_user_set_value(__pdata uint8_t pin, bool high_low)
+{
+	pin_values[pin].pin_dir = high_low;
+	
+	if(PIN_MAX > pin && pin_values[pin].pin_mirror == PIN_NULL)
 	{
 		switch(pins_user_map[pin].port)
 		{
@@ -168,28 +181,34 @@ pins_user_set_direction(__pdata uint8_t pin, __pdata uint8_t high_low)
 	return false;
 }
 
+bool
+pins_user_get_value(__pdata uint8_t pin)
+{
+	return pin_values[pin].pin_dir;
+}
+
 uint8_t
-pins_user_get_direction(__pdata uint8_t pin)
+pins_user_get_adc(__pdata uint8_t pin)
 {
 	if(PIN_MAX > pin && pin_values[pin].output == PIN_INPUT)
 	{
 		switch(pins_user_map[pin].port)
 		{
 			case 0:
-				return P0 & (1<<pins_user_map[pin].pin)?1:0;
+				return P0 & (1<<pins_user_map[pin].pin);
 				break;
 				
 			case 1:
-				return P1 & (1<<pins_user_map[pin].pin)?1:0;
+				return P1 & (1<<pins_user_map[pin].pin);
 				break;
 				
 			case 2:
-				return P2 & (1<<pins_user_map[pin].pin)?1:0;
+				return P2 & (1<<pins_user_map[pin].pin);
 				break;
 				
 			default:
-				return 0x55;
+				return PIN_ERROR;
 		}
 	}
-	return 0x55;
+	return PIN_ERROR;
 }
