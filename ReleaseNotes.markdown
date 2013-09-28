@@ -14,14 +14,14 @@
 
 2. Users can now controll unused pins. This can be preformed by the following commands
 
-Command       | Result
-------------- | -------------
-ATPP          | Print Pins Settings
-ATPI=1        | Set Pin 1 to Input
-ATPR=1        | Read Pin 1 Direction (When set to input)
-ATPO=2        | Set Pin 2 to Output (Output's by Default can only be controlled by AT cmd)
-ATPC=2,1      | Turn pin 2 on (or set internal pull up resistor in input mode) 
-ATPC=2,0      | Turn pin 2 off (or set internal pull down resistor in input mode)
+Command       | Function | Description
+------------- | ---------|-------------
+ATPP          | Print    | Print All Pins Settings
+ATPI=1        | Input    | Set Pin 1 to Input
+ATPR=1        | Read     | Read Pin 1 value (When set to input)
+ATPO=2        | Output   | Set Pin 2 to Output (Output's by Default can only be controlled by AT cmd)
+ATPC=2,1      | Control  | Turn pin 2 on  - Output Mode / Set internal pull up resistor - Input Mode 
+ATPC=2,0      | Control  | Turn pin 2 off - Output Mode / Set internal pull down resistor - Input Mode
 
 The mapping between the pin numbers above and the port number are below
 
