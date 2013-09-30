@@ -33,6 +33,7 @@
 ///
 
 #include "pins_user.h"
+#include "radio.h"
 
 #if PIN_MAX > 0
 
@@ -51,6 +52,7 @@ __code const struct pins_user_map {
 	{0, 1}, // 5 - P0.1
 };
 #else
+	{0xff, 0xff} // Default pin mapping (not supported)
 };
 #endif
 

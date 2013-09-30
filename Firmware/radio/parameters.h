@@ -32,6 +32,8 @@
 /// Definitions for program parameter storage.
 ///
 
+#include "pins_user.h"
+
 /// Parameter IDs.
 ///
 /// Parameter IDs here match AT S-register numbers, so change them with extreme

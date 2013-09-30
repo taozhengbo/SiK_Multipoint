@@ -35,7 +35,8 @@
 #ifndef _PINS_H_
 #define _PINS_H_
 
-#include "radio.h"
+#include <stdint.h>
+#include <stdbool.h>
 
 // Pin rfd900a  Mapping
 #ifdef BOARD_rfd900a
