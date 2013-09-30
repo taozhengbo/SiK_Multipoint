@@ -72,7 +72,7 @@ enum ParamID {
 };
 
 
-#define PARAM_FORMAT_CURRENT	0x1AUL	//< current parameter format ID
+#define PARAM_FORMAT_CURRENT	0x1BUL	//< current parameter format ID
 
 /// Parameter type.
 ///

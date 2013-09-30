@@ -130,12 +130,15 @@ main(void)
 	aesEncrypt_init();
 #endif // INCLUDE_ENCRYPTION
 	
-#if defined _BOARD_RFD900A && defined WATCH_DOG_ENABLE
+	// initialise pins for the user
+	pins_user_init();
+	
+#ifdef WATCH_DOG_ENABLE
 	// 0x40 = Enable Watchdog
 	PCA0MD |= 0x40;
 	// Reset Watchdog
 	PCA0CPH5 = 0;
-#endif // _BOARD_RFD900A
+#endif // WATCH_DOG_ENABLE
 	
 	tdm_serial_loop();
 }

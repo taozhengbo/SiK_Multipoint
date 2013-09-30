@@ -151,6 +151,11 @@ packet_get_next(register uint8_t max_xmit, __xdata uint8_t * __pdata buf)
 {
 	register uint16_t slen;
 	
+#ifdef WATCH_DOG_ENABLE
+	// Kick the Watchdog
+	PCA0CPH5 = 0;
+#endif // WATCH_DOG_ENABLE
+	
 	slen = serial_read_available();
 	if (force_resend ||
 		(feature_opportunistic_resend &&
@@ -371,6 +376,44 @@ packet_is_duplicate(uint8_t len, __xdata uint8_t * __pdata buf, bool is_resend)
 #endif
 	last_recv_is_resend = true;
 	return false;
+}
+
+// inject a ati5 packet to send when possible
+void
+packet_ati5_inject(__pdata uint8_t ati5_id)
+{
+	if (ati5_id < PARAM_MAX) {
+		printf_start_capture(last_sent, sizeof(last_sent));
+		param_print(ati5_id);
+		last_sent_len = printf_end_capture();
+		
+		if(last_sent_len>0)
+		{
+			last_sent_is_resend = false;
+			injected_packet = true;
+		}
+	}
+	
+#ifdef WATCH_DOG_ENABLE
+	// Kick the Watchdog
+	PCA0CPH5 = 0;
+#endif // WATCH_DOG_ENABLE
+}
+
+// inject a at packet to send when possible
+void
+packet_at_inject(void)
+{
+	at_cmd_ready = true;
+	printf_start_capture(last_sent, sizeof(last_sent));
+	at_command();
+	last_sent_len = printf_end_capture();
+	
+	if (last_sent_len > 0)
+	{
+		last_sent_is_resend = false;
+		injected_packet = true;
+	}
 }
 
 // inject a packet to send when possible

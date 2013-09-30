@@ -489,7 +489,20 @@ static void
 at_p (void) __nonbanked
 {
 	__pdata uint8_t pinId;
-	if(at_cmd[4] != '=' || !isdigit(at_cmd[5]))
+	if(at_cmd[3] == 'P')
+	{
+		for (pinId = 0; pinId < PIN_MAX; pinId++)
+		{
+			printf("[%u] Pin:%d ",nodeId, pinId);
+			if (pins_user_get_io(pinId))
+				printf("Output ");
+			else
+				printf("Input  ");
+			printf("Val: %d\n",pins_user_get_value(pinId));
+		}
+		return;
+	}
+	else if(at_cmd[4] != '=' || !isdigit(at_cmd[5]))
 	{
 		at_error();
 		return;
@@ -510,12 +523,15 @@ at_p (void) __nonbanked
 			break;
 		
 		case 'R':
-			printf("[%u] val:%u\n", nodeId, pins_user_get_direction(pinId));
+			if(pins_user_get_io(pinId) == PIN_INPUT)
+				printf("[%u] val:%u\n", nodeId, pins_user_get_adc(pinId));
+			else
+				at_error();
 			return;
 			break;
 			
 		case 'C':
-			if(!isdigit(at_cmd[7]) || !pins_user_set_direction(pinId, (at_cmd[7]-'0')))
+			if(!isdigit(at_cmd[7]) || !pins_user_set_value(pinId, (at_cmd[7]-'0')))
 			{
 				at_error();
 				return;
