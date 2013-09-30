@@ -79,7 +79,9 @@ enum ParamID {
 /// All parameters have this type.
 ///
 typedef uint32_t	param_t;
+#if PIN_MAX > 0
 extern  struct pins_user_info pin_values[];
+#endif
 /// Set a parameter
 ///
 /// @note Parameters are not saved until param_save is called.

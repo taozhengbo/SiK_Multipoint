@@ -83,7 +83,9 @@ __code const struct parameter_info {
 ///
 __code const pins_user_info_t pins_defaults = PINS_USER_INFO_DEFAULT;
 __xdata param_t	 parameter_values[PARAM_MAX];
-pins_user_info_t pin_values[PIN_MAX];
+#if PIN_MAX > 0
+__xdata pins_user_info_t pin_values[PIN_MAX];
+#endif
 
 #ifdef INCLUDE_ENCRYPTION
 SEGMENT_VARIABLE (EncryptionKey[32], U8, SEG_XDATA); // Storage for 256bits
@@ -270,7 +272,7 @@ __critical {
 	sum = flash_read_scratch(i)<<8 | flash_read_scratch(i+1);
 	if (sum != crc16(sizeof(parameter_values), ((__xdata uint8_t *)parameter_values)))
 		return false;
-
+#if PIN_MAX > 0
 	i+=2;
 	
 	// loop reading the pin_values array (sizeof pin_values, parameters and checksum)
@@ -288,7 +290,8 @@ __critical {
 		debug("parameter format %lu expecting %lu", parameters[PARAM_FORMAT], PARAM_FORMAT_CURRENT);
 		return false;
 	}
-
+#endif
+	
 	for (i = 0; i < PARAM_MAX; i++) {
 		if (!param_check(i, parameter_values[i])) {
 			parameter_values[i] = parameter_info[i].default_value;
@@ -340,7 +343,8 @@ __critical {
 	// write checksum
 	flash_write_scratch(i, sum>>8);
 	flash_write_scratch(i+1, sum&0xFF);
-	
+
+#if PIN_MAX > 0
 	i+=2;
 	
 	// save pin_values to the scratch page (sizeof pin_values, parameters and checksum)
@@ -353,6 +357,7 @@ __critical {
 	// write checksum
 	flash_write_scratch(i, sum>>8);
 	flash_write_scratch(i+1, sum&0xFF);
+#endif
 	
 #ifdef INCLUDE_ENCRYPTION
 	// write encryption key
@@ -380,12 +385,14 @@ param_default(void)
 		
 	}
 	
+#if PIN_MAX > 0
 	for (i = 0; i < PIN_MAX; i ++) {
 		pin_values[i].node_mirror = pins_defaults.node_mirror;
 		pin_values[i].output = pins_defaults.output;
 		pin_values[i].pin_dir = pins_defaults.pin_dir;
 		pin_values[i].pin_mirror = pins_defaults.pin_mirror;
 	}
+#endif
 }
 
 void

@@ -488,6 +488,7 @@ at_ampersand(void) __nonbanked
 static void
 at_p (void) __nonbanked
 {
+#if PIN_MAX > 0
 	__pdata uint8_t pinId;
 	if(at_cmd[3] == 'P')
 	{
@@ -543,6 +544,9 @@ at_p (void) __nonbanked
 	}
 	
 	at_ok();
+#else
+	at_error();
+#endif
 }
 
 static void

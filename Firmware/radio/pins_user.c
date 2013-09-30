@@ -34,8 +34,9 @@
 
 #include "pins_user.h"
 
-// pin_values defined as extern in parameters
+#if PIN_MAX > 0
 
+// pin_values defined as extern in parameters
 __code const struct pins_user_map {
 	uint8_t port;
 	uint8_t	pin;
@@ -212,3 +213,5 @@ pins_user_get_adc(__pdata uint8_t pin)
 	}
 	return PIN_ERROR;
 }
+
+#endif // #if PIN_MAX > 0

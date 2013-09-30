@@ -129,9 +129,11 @@ main(void)
 #ifdef INCLUDE_ENCRYPTION
 	aesEncrypt_init();
 #endif // INCLUDE_ENCRYPTION
-	
+
+#if PIN_MAX > 0
 	// initialise pins for the user
 	pins_user_init();
+#endif
 	
 #ifdef WATCH_DOG_ENABLE
 	// 0x40 = Enable Watchdog
