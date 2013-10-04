@@ -134,7 +134,6 @@ class uploader(object):
 				+ chr(address & 0xff)
 				+ chr((address >> 8) & 0xff)
 				+ chr((address >> 16) & 0xff)
-				+ chr(address >> 24)
 				+ uploader.EOC)
 		else:
 			self.__send(uploader.LOAD_ADDRESS

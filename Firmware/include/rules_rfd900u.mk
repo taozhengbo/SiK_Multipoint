@@ -35,4 +35,4 @@ CFLAGS				+= --constseg HOME
 CODE_OFFSET_HOME     = 0x400
 CODE_OFFSET_BANK3    = 0x800
 LDFLAGS				+= --model-huge --out-fmt-ihx --iram-size 256 --xram-size $(XRAM_SIZE) --code-loc $(CODE_OFFSET_HOME) --code-size 0x1F400 --stack-size 64
-BOOTLDFLAGS			 = --iram-size 256 --xram-size $(XRAM_SIZE) --stack-size 64 --nostdlib -Wl-r -Wl-bHIGHCSEG=0x3FC00
+BOOTLDFLAGS			 = --iram-size 256 --xram-size $(XRAM_SIZE) --stack-size 64 --nostdlib -Wl-r -Wl-bHIGHCSEG=0x0FC00

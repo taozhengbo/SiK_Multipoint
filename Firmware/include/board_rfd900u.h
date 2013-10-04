@@ -74,11 +74,11 @@
 //#define WATCH_DOG_ENABLE
 
 // GPIO definitions (not exported)
-SBIT(LED_RED,	   SFR_P1, 6);
-SBIT(LED_GREEN,	   SFR_P1, 5);
+SBIT(LED_RED,	   SFR_P3, 6);
+SBIT(LED_GREEN,	   SFR_P3, 7);
 SBIT(PIN_CONFIG,   SFR_P0, 2);
 SBIT(PIN_ENABLE,   SFR_P0, 3);
-SBIT(PA_ENABLE,    SFR_P2, 5);         // Power Amplifier Enable
+//SBIT(PA_ENABLE,    SFR_P2, 5);         // Power Amplifier Enable
 
 
 // Signal polarity definitions
@@ -88,7 +88,7 @@ SBIT(PA_ENABLE,    SFR_P2, 5);         // Power Amplifier Enable
 
 // UI definitions
 #define LED_BOOTLOADER	LED_RED
-#define LED_RADIO	LED_GREEN
+#define LED_RADIO		LED_GREEN
 #define LED_ACTIVITY	LED_RED
 #define BUTTON_BOOTLOAD	PIN_CONFIG
 
@@ -99,19 +99,27 @@ SBIT(PA_ENABLE,    SFR_P2, 5);         // Power Amplifier Enable
 // board-specific hardware config
 #define HW_INIT							\
 	do {							\
-		/* GPIO config */				\
-                P0SKIP  |=  0xCF;               /* P0 UART avail on XBAR */     \
-                P1SKIP  |=  0x78;               /* P1 SPI1, CEX0 avail on XBAR */       \
-                P2SKIP  |=  0xFF;               /* P2 nothing avail on XBAR, All GPIO */        \
-		SFRPAGE	 =  CONFIG_PAGE;			  \
-		P1MDOUT	|= 0xF5;	/* SCK1, MOSI1, MISO1 push-pull was 60 */ \
-		P1DRV	|= 0xF5;	/* SPI signals use high-current mode, LEDs and PAEN High current drive was 60 */ \
-                P2MDOUT |= 0x20;        /* PA_ENABLE (P2.5) output */ \
-                P2DRV   |= 0x20;        /* PA_ENABLE (P2.5) high current drive*/ \
-		SFRPAGE	 =  LEGACY_PAGE;			  \
-		/* INT0 is the radio interrupt, on P0.7 */	\
-		IT01CF   =  (IT01CF & 0xf) | 0x7;		\
-		IT0	 = 0;	/* INT0 level triggered */	\
+		/* GPIO config */ \
+		P0SKIP  |= 0xCF;		/* P0 UART avail on XBAR */ \
+		P1SKIP  |= 0x78;		/* P1 SPI1, CEX0 avail on XBAR */ \
+		P2SKIP  |= 0xFF;		/* P2 nothing avail on XBAR, All GPIO */ \
+		SFRPAGE  = CONFIG_PAGE; \
+		P1MDOUT |= 0xF5;		/* SCK1, MOSI1, MISO1 push-pull was 60 */ \
+		P1DRV   |= 0xF5;		/* SPI signals use high-current mode, LEDs and PAEN High current drive was 60 */ \
+		P2MDOUT |= 0x20;		/* PA_ENABLE (P2.5) output */ \
+		P2DRV   |= 0x20;		/* PA_ENABLE (P2.5) high current drive*/ \
+		P3MDOUT |= 0xC0;		/* Led ports */ \
+		P3DRV   |= 0xC0;		/* Led ports */ \
+		SFRPAGE  = LEGACY_PAGE; \
+		/* INT0 is the radio interrupt, on P0.7 */ \
+		IT01CF   = (IT01CF & 0xf) | 0x7; \
+		IT0      = 0;			/* INT0 level triggered */	\
+		/* Setup Timers */ \
+		TL1		 = TH1;			/* Init Timer1 */ \
+		TMOD	&= ~0xf0;		/* TMOD: timer 1 in 8-bit autoreload */ \
+		TMOD	|=  0x20;\
+		TR1		 = 1;			/* START Timer1 */ \
+		TI0		 = 1;			/* Indicate TX0 ready */ \
 	} while(0)
 
 // application/board-specific hardware config

@@ -58,7 +58,11 @@ $(PRODUCT_INSTALL):	frequency = $(basename $(word 3, $(subst ~, ,$(notdir $@))))
 $(PRODUCT_INSTALL):	$(PRODUCT_HEX)
 	@echo PATCH $@
 	$(v)mkdir -p $(dir $@)
+ifeq ($(HAVE_BANKING), 1)
+	$(v)$(SRCROOT)/tools/hexpatch.py --patch 0xfffe:0x`expr $(frequency) / 10` $(PRODUCT_HEX) > $@
+else
 	$(v)$(SRCROOT)/tools/hexpatch.py --patch 0xfbfe:0x`expr $(frequency) / 10` $(PRODUCT_HEX) > $@
+endif
 
 #
 # Check that the bootloader has not overflowed its allocated space

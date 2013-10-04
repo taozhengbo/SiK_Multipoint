@@ -71,10 +71,17 @@ void
 bl_main(void)
 {
 	uint8_t		i;
-
+#ifdef FLASH_BANKS
+	uint8_t		bank_state = PSBANK;
+#endif
 	// Do early hardware init
 	hardware_init();
 
+	// Switch the page to bank 3
+#ifdef FLASH_BANKS
+	PSBANK = 0x13;
+#endif
+	
 	// Work out why we reset
 	//
 	// Note that if PORSF (bit 1) is set, all other bits are invalid.
@@ -184,7 +191,6 @@ bootloader(void)
 		address |= (uint16_t)cin() << 8;
 #ifdef FLASH_BANKS
 		address |= (uint32_t)cin() << 16;
-		address |= (uint32_t)cin() << 24;
 #endif // FLASH_BANKS
 		if (cin() != PROTO_EOC)
 			goto cmd_bad;
@@ -254,6 +260,8 @@ hardware_init(void)
 {
 	int i = 0;
 
+	SFRPAGE = LEGACY_PAGE;
+	
 	// Disable interrupts - we run with them off permanently
 	// as all interrupts vector to the application.
 	EA	 =  0x00;
@@ -263,7 +271,11 @@ hardware_init(void)
 
 	// Select the internal oscillator, prescale by 1
 	FLSCL	 =  0x40;
-	OSCICN	 =  0x8F;
+#ifdef FLASH_BANKS
+	OSCICN	 |=	0x80;
+#else
+	OSCICN	 =	0x8F;
+#endif
 	CLKSEL	 =  0x00;
 
 	// Configure Timers
