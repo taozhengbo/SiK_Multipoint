@@ -79,7 +79,7 @@ bl_main(void)
 
 	// Switch the page to bank 3
 #ifdef FLASH_BANKS
-	PSBANK = 0x13;
+	PSBANK = 0x33;
 #endif
 	
 	// Work out why we reset
@@ -282,7 +282,7 @@ hardware_init(void)
 	TCON	 =  0x40;		// Timer1 on
 	TMOD	 =  0x20;		// Timer1 8-bit auto-reload
 	CKCON	 =  0x08;		// Timer1 from SYSCLK
-	TH1	 =  0x96;		// 115200 bps
+	TH1		 =  0x96;		// 115200 bps
 
 	// Configure UART
 	SCON0	 =  0x12;		// enable receiver, set TX ready
