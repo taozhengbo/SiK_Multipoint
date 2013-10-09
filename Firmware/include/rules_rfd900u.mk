@@ -31,7 +31,7 @@
 FREQUENCIES			 = 915
 XRAM_SIZE			 = 8448
 HAVE_BANKING		 = 1
-CFLAGS				+= --constseg HOME
+CFLAGS				+= --constseg BANK3
 CODE_OFFSET_HOME     = 0x400
 CODE_OFFSET_BANK3    = 0x800
 LDFLAGS				+= --model-huge --out-fmt-ihx --iram-size 256 --xram-size $(XRAM_SIZE) --code-loc $(CODE_OFFSET_HOME) --code-size 0x1F400 --stack-size 64

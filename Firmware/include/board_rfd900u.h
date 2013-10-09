@@ -67,6 +67,7 @@
 
 #define BOARD_ID	  0x44
 #define BOARD_NAME	"RFD900U"
+#define CPU_SI1030
 
 #define BOARD_MINTXPOWER 0		// Minimum transmit power level
 #define BOARD_MAXTXPOWER 30		// Maximum transmit power level
@@ -108,8 +109,8 @@ SBIT(PIN_ENABLE,   SFR_P0, 3);
 		P1DRV   |= 0xF5;		/* SPI signals use high-current mode, LEDs and PAEN High current drive was 60 */ \
 		P2MDOUT |= 0x20;		/* PA_ENABLE (P2.5) output */ \
 		P2DRV   |= 0x20;		/* PA_ENABLE (P2.5) high current drive*/ \
-		P3MDOUT |= 0xC0;		/* Led ports */ \
-		P3DRV   |= 0xC0;		/* Led ports */ \
+		P3MDOUT |= 0x40;		/* Led Red */ \
+		P3DRV   |= 0x40;		/* Led Red */ \
 		SFRPAGE  = LEGACY_PAGE; \
 		/* INT0 is the radio interrupt, on P0.7 */ \
 		IT01CF   = (IT01CF & 0xf) | 0x7; \
