@@ -80,7 +80,7 @@ flash_app_valid(void)
 /// @returns			True if the address is visible
 ///
 static bool
-#ifdef FLASH_BANKS
+#ifdef CPU_SI1030
 flash_address_visible(uint32_t address)
 {
 	switch (address >> 16) {
@@ -102,14 +102,14 @@ flash_address_visible(uint32_t address)
 	}
 	return true;
 }
-#else // FLASH_BANKS
+#else // CPU_SI1030
 flash_address_visible(uint16_t address)
 {
 	if ((address < FLASH_APP_START) || (address >= FLASH_INFO_PAGE))
 		return false;
 	return true;
 }
-#endif // FLASH_BANKS
+#endif // CPU_SI1030
 
 /// Load the write-enable keys into the hardware in order to enable
 /// one write or erase operation.
@@ -125,7 +125,7 @@ void
 flash_erase_app(void)
 {
 	uint16_t	address;
-#ifdef FLASH_BANKS
+#ifdef CPU_SI1030
 	uint16_t	greaterAddress;
 	uint8_t		bank;
 	uint8_t		bank_state = PSBANK;
@@ -162,7 +162,7 @@ flash_erase_app(void)
 	}
 	// Restore Prev State
 	PSBANK = bank_state;
-#else // FLASH_BANKS
+#else // CPU_SI1030
 	// start with the signature so that a partial erase will fail the signature check on startup
 	for (address = FLASH_INFO_PAGE - FLASH_PAGE_SIZE; address >= FLASH_APP_START; address -= FLASH_PAGE_SIZE) {
 		flash_load_keys();
@@ -170,13 +170,13 @@ flash_erase_app(void)
 		*(uint8_t __xdata *)address = 0xff;	// do the page erase
 		PSCTL = 0x00;				// disable PSWE/PSEE
 	}
-#endif // FLASH_BANKS
+#endif // CPU_SI1030
 }
 
 void
 flash_erase_scratch(void)
 {
-#ifdef FLASH_BANKS // The Banked version doesn't have a scratch page
+#ifdef CPU_SI1030 // The Banked version doesn't have a scratch page
 	flash_load_keys();		// unlock flash for one operation
 	PSCTL = 0x03;			// set PSWE and PSEE
 	*(uint8_t __xdata *)FLASH_SCRATCH = 0xff;	// do the page erase
@@ -193,7 +193,7 @@ flash_erase_scratch(void)
 // If we have banking support, change to 32bit addressing..
 
 void
-#ifdef FLASH_BANKS
+#ifdef CPU_SI1030
 flash_write_byte(uint32_t address, uint8_t c)
 {
 	uint8_t	bank_state = PSBANK;
@@ -214,7 +214,7 @@ flash_write_byte(uint32_t address, uint8_t c)
 		PSBANK = bank_state;
 	}
 }
-#else // FLASH_BANKS
+#else // CPU_SI1030
 flash_write_byte(uint16_t address, uint8_t c)
 {
 	if (flash_address_visible(address)) {
@@ -224,10 +224,10 @@ flash_write_byte(uint16_t address, uint8_t c)
 		PSCTL = 0x00;				// disable PSWE/PSEE
 	}
 }
-#endif // FLASH_BANKS
+#endif // CPU_SI1030
 
 uint8_t
-#ifdef FLASH_BANKS
+#ifdef CPU_SI1030
 flash_read_byte(uint32_t address)
 {
 	uint8_t	bank_state = PSBANK;
@@ -248,12 +248,12 @@ flash_read_byte(uint32_t address)
 	}
 	return 0xFF;
 }
-#else // FLASH_BANKS
+#else // CPU_SI1030
 flash_read_byte(uint16_t address)
 {
 	return *(uint8_t __code *)address;
 }
-#endif // FLASH_BANKS
+#endif // CPU_SI1030
 
 
 /* NOTE... Does not support banking due to 16bit address defines  */

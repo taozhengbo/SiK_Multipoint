@@ -92,6 +92,9 @@ bl_main(void)
 	// Check for app validity
 	app_valid = flash_app_valid();
 
+	// Set the button to have a pullup on this pin
+	BUTTON_BOOTLOAD = ~BUTTON_ACTIVE;
+	
 	// Do some simple debouncing on the bootloader-entry
 	// strap/button.
 	debounce_count = 0;
@@ -145,7 +148,7 @@ bootloader(void)
 {
 	uint8_t		c;
 	uint8_t		count, i;
-#ifdef FLASH_BANKS
+#ifdef CPU_SI1030
 	static uint32_t	address;
 #else // FLASH_BANKS
 	static uint16_t	address;
@@ -189,7 +192,7 @@ bootloader(void)
 	case PROTO_LOAD_ADDRESS:	// set address
 		address = cin();
 		address |= (uint16_t)cin() << 8;
-#ifdef FLASH_BANKS
+#ifdef CPU_SI1030
 		address |= (uint32_t)cin() << 16;
 #endif // FLASH_BANKS
 		if (cin() != PROTO_EOC)
@@ -271,7 +274,7 @@ hardware_init(void)
 
 	// Select the internal oscillator, prescale by 1
 	FLSCL	 =  0x40;
-#ifdef FLASH_BANKS
+#ifdef CPU_SI1030
 	OSCICN	 |=	0x80;
 #else
 	OSCICN	 =	0x8F;
