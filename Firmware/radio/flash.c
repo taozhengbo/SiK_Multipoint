@@ -44,7 +44,13 @@
 // last thing to be programmed during an update, tells the bootloader that
 // a valid application is installed.
 //
-__at(FLASH_SIGNATURE_BYTES) uint8_t __code app_signature[2] = { FLASH_SIG0, FLASH_SIG1 };
+#ifdef CPU_SI1030
+#define FSB (FLASH_SIGNATURE_BYTES | 0x30000)
+#else
+#define FSB (FLASH_SIGNATURE_BYTES)
+#endif
+
+__at(FSB) uint8_t __code app_signature[2] = { FLASH_SIG0, FLASH_SIG1 };
 
 /// Load the write-enable keys into the hardware in order to enable
 /// one write or erase operation.
@@ -60,9 +66,9 @@ void
 flash_erase_scratch(void)
 __critical {
 	// erase the scratch page
-#ifdef FLASH_SCRATCH // Part of memory no seperate scratch section
+#ifdef CPU_SI1030 // Part of memory no seperate scratch section
 	__pdata uint8_t	bank_state = PSBANK;
-	PSBANK = ((bank_state & 0x03) | (0x03<<4)); // Select Bank 3
+	PSBANK = ((bank_state & 0x03) | 0x30); // Select Bank 3
 	
 	flash_load_keys();				// unlock flash for one operation
 	PSCTL = FLASH_ERASE_SCRATCH;	// enable flash erase of the scratch page
@@ -80,10 +86,10 @@ uint8_t
 flash_read_scratch(__pdata uint16_t address)
 __critical {
 	__pdata uint8_t	d;
-#ifdef FLASH_SCRATCH // Part of memory no seperate scratch section
+#ifdef CPU_SI1030 // Part of memory no seperate scratch section
 	__pdata uint8_t	bank_state;
 	bank_state = PSBANK;
-	PSBANK = ((bank_state & 0x03) | (0x03<<4)); // Select Bank 3
+	PSBANK = ((bank_state & 0x03) | 0x30); // Select Bank 3
 	PSCTL = FLASH_READ_SCRATCH;
 	d = *(uint8_t __code *)(FLASH_SCRATCH | address);
 	PSBANK = bank_state; // Restore State
@@ -99,9 +105,9 @@ void
 flash_write_scratch(__pdata uint16_t address, __pdata uint8_t c)
 __critical {
 
-#ifdef FLASH_SCRATCH // Part of memory no seperate scratch section
+#ifdef CPU_SI1030 // Part of memory no seperate scratch section
 	__pdata uint8_t	bank_state = PSBANK;
-	PSBANK = ((bank_state & 0x03) | (0x03<<4)); // Select Bank 3
+	PSBANK = ((bank_state & 0x03) | 0x30); // Select Bank 3
 	flash_load_keys();
 	PSCTL = 0x05;
 	*(uint8_t __xdata *)(FLASH_SCRATCH | address) = c;

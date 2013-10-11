@@ -45,13 +45,13 @@
 ///				to serial_device_set_speed at the appropriate
 ///				point during initialisation.
 ///
-extern void	serial_init(register uint8_t speed);
+extern void	serial_init(register uint8_t speed) __nonbanked;
 
 /// check if a serial speed is valid
 ///
 /// @param	speed		The serial speed to configure
 ///
-extern bool serial_device_valid_speed(register uint8_t speed);
+extern bool serial_device_valid_speed(register uint8_t speed) __nonbanked;
 
 /// Write a byte to the serial port.
 ///
@@ -59,48 +59,48 @@ extern bool serial_device_valid_speed(register uint8_t speed);
 /// @return			True if the byte was written, false if the
 ///				FIFO is full.
 ///
-extern bool	serial_write(register uint8_t c);
+extern bool	serial_write(register uint8_t c) __nonbanked;
 
 /// Write bytes to the serial port.
 ///
 /// @param	buf		Pointer to the data to write.
 /// @param	count		The number of bytes to write.
 ///
-extern void	serial_write_buf(__xdata uint8_t * __data buf, __pdata uint8_t count);
+extern void	serial_write_buf(__xdata uint8_t * __data buf, __pdata uint8_t count) __nonbanked;
 
 /// Check for space in the write FIFO
 ///
 /// @return			The number of bytes that can be written.
 ///
-extern uint16_t	serial_write_space(void);
+extern uint16_t	serial_write_space(void) __nonbanked;
 
 /// Check for space in the read FIFO. Used to allow for software flow
 /// control
 ///
 /// @return			The percentage free space in the rx buffer
 ///
-extern uint8_t	serial_read_space(void);
+extern uint8_t	serial_read_space(void) __nonbanked;
 
 /// Read a byte from the serial port.
 ///
 /// @return			The next byte in the receive FIFO.
 ///				If no bytes are available, returns zero.
 ///
-extern uint8_t	serial_read(void);
+extern uint8_t	serial_read(void) __nonbanked;
 
 /// peek at a byte from the serial port, without removing it
 /// caller must ensure serial available is > 0
 ///
 /// @return			The next byte in the receive FIFO.
 ///
-extern uint8_t	serial_peek(void);
+extern uint8_t	serial_peek(void) __nonbanked;
 
 /// peek at the byte after next from the serial port, without removing it
 /// caller must ensure serial available is > 1
 ///
 /// @return			The byte after next in the receive FIFO.
 ///
-extern uint8_t	serial_peek2(void);
+extern uint8_t	serial_peek2(void) __nonbanked;
 
 /// Read bytes from the serial port.
 ///
@@ -111,17 +111,17 @@ extern uint8_t	serial_peek2(void);
 ///				to satisfy the request (no bytes are read
 ///				in this case).
 ///
-extern bool	serial_read_buf(__xdata uint8_t * __data buf, __pdata uint8_t count);
+extern bool	serial_read_buf(__xdata uint8_t * __data buf, __pdata uint8_t count) __nonbanked;
 
 /// Check for bytes in the read FIFO
 ///
 /// @return			The number of bytes available to be read
 ///				from the FIFO.
 ///
-extern uint16_t	serial_read_available(void);
+extern uint16_t	serial_read_available(void) __nonbanked;
 
 /// check if RTS allows us to send more data
 ///
-extern void serial_check_rts(void);
+extern void serial_check_rts(void) __nonbanked;
 
 #endif // _SERIAL_H_

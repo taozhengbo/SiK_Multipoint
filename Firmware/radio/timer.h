@@ -31,24 +31,24 @@
 ///
 /// @return		timer counter, in 0.5usec units
 ///
-extern uint16_t timer2_16(void);
+extern uint16_t timer2_16(void) __nonbanked;
 
 /// return microseconds since boot
 ///
 /// @return		microseconds since boot
-extern uint32_t micros(void);
+extern uint32_t micros(void) __nonbanked;
 
 /// return a 16 bit value that rolls over in approximately
 /// one second intervals
 ///
 /// @return		16 bit value in units of 16 microseconds
 ///
-extern uint16_t timer2_tick(void);
+extern uint16_t timer2_tick(void) __nonbanked;
 
 
 /// initialise timers
 ///
-extern void timer_init(void);
+extern void timer_init(void) __nonbanked;
 
 /// Set the delay timer
 ///
@@ -57,19 +57,19 @@ extern void timer_init(void);
 /// @param	msec		Minimum time before the timer expiers.  The actual time
 ///				may be greater.
 ///
-extern void	delay_set(register uint16_t msec);
+extern void	delay_set(register uint16_t msec) __nonbanked;
 
 /// Set the delay timer in 100Hz ticks
 ///
 /// @param ticks		Number of ticks before the timer expires.
 ///
-extern void delay_set_ticks(register uint8_t ticks);
+extern void delay_set_ticks(register uint8_t ticks) __nonbanked;
 
 /// Check the delay timer.
 ///
 /// @return			True if the timer has expired.
 ///
-extern bool	delay_expired(void);
+extern bool	delay_expired(void) __nonbanked;
 
 /// Wait for a period of time to expire.
 ///
@@ -78,8 +78,8 @@ extern bool	delay_expired(void);
 /// @param	msec		Minimum time to wait.  The actual time
 ///				may be greater.
 ///
-extern void	delay_msec(register uint16_t msec);
+extern void	delay_msec(register uint16_t msec) __nonbanked;
 
 /// return some entropy from timers
 ///
-extern uint8_t timer_entropy(void);
+extern uint8_t timer_entropy(void) __nonbanked;

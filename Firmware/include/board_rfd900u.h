@@ -102,8 +102,8 @@ SBIT(PIN_ENABLE,   SFR_P0, 3);
 	do {							\
 		/* GPIO config */ \
 		P0SKIP  |= 0xCF;		/* P0 UART avail on XBAR */ \
-		P1SKIP  |= 0x78;		/* P1 SPI1, CEX0 avail on XBAR */ \
-		P2SKIP  |= 0xFF;		/* P2 nothing avail on XBAR, All GPIO */ \
+		P1SKIP  |= 0xFF;		/* P1 nothing avail on XBAR, All GPIO */  \
+		P2SKIP  |= 0x00; /*78;*/	/* P2 SPI1, CEX0 avail on XBAR */	\
 		SFRPAGE  = CONFIG_PAGE; \
 		P1MDOUT |= 0xF5;		/* SCK1, MOSI1, MISO1 push-pull was 60 */ \
 		P1DRV   |= 0xF5;		/* SPI signals use high-current mode, LEDs and PAEN High current drive was 60 */ \
@@ -117,8 +117,7 @@ SBIT(PIN_ENABLE,   SFR_P0, 3);
 		IT0      = 0;			/* INT0 level triggered */	\
 		/* Setup Timers */ \
 		TL1		 = TH1;			/* Init Timer1 */ \
-		TMOD	&= ~0xf0;		/* TMOD: timer 1 in 8-bit autoreload */ \
-		TMOD	|=  0x20;\
+		TMOD	 = (TMOD & ~0xf0) | 0x20;		/* TMOD: timer 1 in 8-bit autoreload */ \
 		TR1		 = 1;			/* START Timer1 */ \
 		TI0		 = 1;			/* Indicate TX0 ready */ \
 	} while(0)
@@ -137,6 +136,6 @@ SBIT(PIN_ENABLE,   SFR_P0, 3);
 #define ENABLE_RFD900_SWITCH 1        // Define RF switches on the module (V1.1 are V1.2 the same)
 #define RFD900_DIVERSITY 1            // Enable/Disable diversity on RFD900 (V1.1 are V1.2 the same)
 SBIT(IRQ,  SFR_P0, 7);                // Connection within RFD900 module, P0.7 is connected to nIRQ
-SBIT(NSS1, SFR_P1, 4);                // SI100x Internal Connection
+SBIT(NSS1, SFR_P2, 3);                // SI1020 Internal Connection
 
 #endif // _BOARD_RFD900U

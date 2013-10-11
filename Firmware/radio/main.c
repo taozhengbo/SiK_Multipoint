@@ -77,11 +77,11 @@ __pdata uint8_t			g_board_bl_version;	///< from the bootloader
 
 /// Configure the Si1000 for operation.
 ///
-static void hardware_init(void);
+static void hardware_init(void) __nonbanked;
 
 /// Initialise the radio and bring it online.
 ///
-static void radio_init(void);
+static void radio_init(void) __nonbanked;
 
 /// statistics for radio and serial errors
 __pdata struct error_counts errors;
@@ -94,7 +94,7 @@ bool feature_mavlink_framing;
 bool feature_rtscts;
 
 void
-main(void)
+main(void) __nonbanked
 {
 	// Stash board info from the bootloader before we let anything touch
 	// the SFRs.
@@ -146,7 +146,7 @@ main(void)
 }
 
 void
-panic(char *fmt, ...)
+panic(char *fmt, ...) __nonbanked
 {
 	va_list ap;
 
@@ -167,24 +167,34 @@ panic(char *fmt, ...)
 }
 
 static void
-hardware_init(void)
+hardware_init(void) __nonbanked
 {
 	__pdata uint16_t	i;
 
+	SFRPAGE	 =  LEGACY_PAGE;
+	
 	// Disable the watchdog timer
 	PCA0MD	&= ~0x40;
 
 	// Select the internal oscillator, prescale by 1
-	FLSCL	 =  0x40;
+#ifdef CPU_SI1030
+	OSCICN	 |=	0x80;
+#else
 	OSCICN	 =  0x8F;
+#endif
 	CLKSEL	 =  0x00;
+	FLSCL	 =  0x40;
 
 	// Configure the VDD brown out detector
 	VDM0CN	 =  0x80;
 	for (i = 0; i < 350; i++);	// Wait 100us for initialization
 	RSTSRC	 =  0x06;		// enable brown out and missing clock reset sources
 
-#ifdef _BOARD_RFD900A			// Redefine port skips to override bootloader defs
+#ifdef CPU_SI1030
+	P0SKIP  =  0xCF;
+	P1SKIP  =  0xFF;
+	P2SKIP  =  0xF0;
+#elif defined _BOARD_RFD900A			// Redefine port skips to override bootloader defs
 	P0SKIP  =  0xCF;                // P0 UART avail on XBAR
 	P1SKIP  =  0xF8;                // P1 SPI1 avail on XBAR 
 	P2SKIP  =  0xCF;                // P2 CEX0 avail on XBAR P2.4, rest GPIO
@@ -202,20 +212,35 @@ hardware_init(void)
 	XBR1	|= 0x44;	// enable SPI in 3-wire mode
 	P1MDOUT	|= 0xF5;	// SCK1, MOSI1, MISO1 push-pull
 	P2MDOUT	|= 0xFF;	// SCK1, MOSI1, MISO1 push-pull
+#elif defined CPU_SI1030
+	XBR1	|= 0x40;	// Enable SPI1 (3 wire mode)
+	P2MDOUT	|= 0x0D;	// SCK1, MOSI1, & NSS1,push-pull
 #else
 	XBR1	|= 0x40;	// enable SPI in 3-wire mode
 	P1MDOUT	|= 0xF5;	// SCK1, MOSI1, MISO1 push-pull
 #endif	
 	SFRPAGE	 = CONFIG_PAGE;
 	P1DRV	|= 0xF5;	// SPI signals use high-current mode, LEDs and PAEN High current drive
-	P2DRV	|= 0xFF;	
+#ifdef CPU_SI1030
+	P2DRV	 = 0xFD; // MOSI1, SCK1, NSS1, high-drive mode
+#else
+	P2DRV	|= 0xFF;
+#endif
+	
+#ifdef CPU_SI1030
+	SFRPAGE	 = SPI1_PAGE;
+#else
 	SFRPAGE	 = LEGACY_PAGE;
+#endif
 	SPI1CFG	 = 0x40;	// master mode
 	SPI1CN	 = 0x00;	// 3 wire master mode
 	SPI1CKR	 = 0x00;	// Initialise SPI prescaler to divide-by-2 (12.25MHz, technically out of spec)
 	SPI1CN	|= 0x01;	// enable SPI
 	NSS1	 = 1;		// set NSS high
-
+#ifdef CPU_SI1030
+	SFRPAGE	 = LEGACY_PAGE;
+#endif
+	
 	// Clear the radio interrupt state
 	IE0	 = 0;
 
@@ -230,6 +255,11 @@ hardware_init(void)
 
 	// global interrupt enable
 	EA = 1;
+
+#ifdef _BOARD_RFD900U
+	P3MDOUT |= 0xC0;		/* Led ports */
+	P3DRV   |= 0xC0;		/* Led ports */
+#endif
 
 	// Turn on the 'radio running' LED and turn off the bootloader LED
 	LED_RADIO = LED_ON;
@@ -249,17 +279,17 @@ hardware_init(void)
 	
 	// 0x08 = Use System clock
 	// 0x80 = PCA Counter is suspended when in Idle Mode.
-	PCA0MD = 0x80 | 0x08;
-	PCA0PWM = 0x00;
+	PCA0MD  |= (0x80 | 0x08);
+	PCA0PWM  = 0x00;
 	PCA0CPH0 = 0x80;
 	PCA0CPM0 = 0x42;
-	PCA0CN = 0x40;
+	PCA0CN	 = 0x40;
 #endif
 	XBR2	 =  0x40;		// Crossbar (GPIO) enable
 }
 
 static void
-radio_init(void)
+radio_init(void) __nonbanked
 {
 	__pdata uint32_t freq_min, freq_max;
 	__pdata uint32_t channel_spacing;

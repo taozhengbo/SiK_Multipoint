@@ -38,7 +38,7 @@
 #include "board.h"
 #include <stdint.h>
 
-#ifdef _BOARD_RFD900U // Only RFD900U has encription
+#ifdef CPU_SI1030 // Only CPU_SI1030 has encription
 
 #define DMA_TRANSFERS_USE_IDLE
 #define INCLUDE_ENCRYPTION
@@ -209,5 +209,5 @@ enum PERIPHERAL_REQUEST_Enum
 #error  "ERROR_INVALID_PARAMETER definition conflict!"
 #endif
 
-#endif  // _BOARD_RFD900U
+#endif  // CPU_SI1030
 #endif	// _AES_ENCRYPT_H_

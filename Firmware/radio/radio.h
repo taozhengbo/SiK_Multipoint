@@ -96,24 +96,24 @@ extern bool feature_rtscts;
 /// @param	fmt		printf-style format string and argments
 ///				to be printed.
 ///
-extern void	panic(char *fmt, ...);
+extern void	panic(char *fmt, ...) __nonbanked;
 
 
 /// Alternate vprintf implementation
 ///
-extern void	vprintfl(const char * fmt, va_list ap) __reentrant;
+extern void	vprintfl(const char * fmt, va_list ap) __reentrant __nonbanked;
 #define	vprintf(_fmt, _ap)	vprintfl(_fmt, _ap)		///< avoid fighting with the library vprintf() prototype
 
 /// Alternate printf implementation
 ///
-extern void	printfl(const char *fmt, ...) __reentrant;
+extern void	printfl(const char *fmt, ...) __reentrant __nonbanked;
 #define printf(_fmt, args...)	printfl(_fmt, ##args)		///< avoid fighting with the library printf() prototype
 
 /// start a capture of printf data 
-extern void printf_start_capture(__xdata uint8_t *buf, uint8_t size);
+extern void printf_start_capture(__xdata uint8_t *buf, uint8_t size) __nonbanked;
 
 /// end printf capture, returning number of bytes that have been captured
-extern uint8_t printf_end_capture(void);
+extern uint8_t printf_end_capture(void) __nonbanked;
 
 // Macro evil for generating strings
 #define __stringify(_x)		#_x
@@ -152,13 +152,13 @@ __pdata extern struct error_counts errors;
 /// @param buf			Pointer to storage for the packet
 /// @return			True if a packet was received
 ///
-extern bool radio_receive_packet(uint8_t *length, __xdata uint8_t * __pdata buf);
+extern bool radio_receive_packet(uint8_t *length, __xdata uint8_t * __pdata buf) __nonbanked;
 
 /// test whether the radio has detected a packet preamble
 ///
 /// @return			True if a preamble has been detected
 ///
-extern bool radio_preamble_detected(void);
+extern bool radio_preamble_detected(void) __nonbanked;
 
 /// begin transmission of a packet
 ///
@@ -170,19 +170,19 @@ extern bool radio_preamble_detected(void);
 ///
 /// @return			true if packet sent successfully
 ///
-extern bool radio_transmit(uint8_t length, __xdata uint8_t * __pdata buf, uint16_t destination, __pdata uint16_t timeout_ticks);
+extern bool radio_transmit(uint8_t length, __xdata uint8_t * __pdata buf, uint16_t destination, __pdata uint16_t timeout_ticks) __nonbanked;
 
 /// switch the radio to receive mode
 ///
 /// @return			Always true.
 ///
-extern bool radio_receiver_on(void);
+extern bool radio_receiver_on(void) __nonbanked;
 
 /// reset and intiialise the radio
 ///
 /// @return			True if the initialisation completed successfully.
 ///
-extern bool radio_initialise(void);
+extern bool radio_initialise(void) __nonbanked;
 
 /// set the nominal radio transmit/receive frequencies
 ///
@@ -190,25 +190,25 @@ extern bool radio_initialise(void);
 ///
 /// @param value		The frequency in Hz
 ///
-extern bool radio_set_frequency(__pdata uint32_t value);
+extern bool radio_set_frequency(__pdata uint32_t value) __nonbanked;
 
 /// set the channel spacing used by the channel offset control
 ///
 /// @param value		The channel spacing in Hz
 ///
-extern bool radio_set_channel_spacing(__pdata uint32_t value);
+extern bool radio_set_channel_spacing(__pdata uint32_t value) __nonbanked;
 
 /// set the channel for transmit/receive
 ///
 /// @param value		The channel number to select
 ///
-extern void radio_set_channel(uint8_t channel);
+extern void radio_set_channel(uint8_t channel) __nonbanked;
 
 /// get the tx/rx frequency channel
 ///
 /// @return			the current channel
 ///
-extern uint8_t radio_get_channel(void);
+extern uint8_t radio_get_channel(void) __nonbanked;
 
 /// configure the radio for a given air data rate
 ///
@@ -217,7 +217,7 @@ extern uint8_t radio_get_channel(void);
 ///				the next supported value
 /// @return			True if the radio was successfully configured.
 ///
-extern bool radio_configure(__pdata uint8_t air_rate);
+extern bool radio_configure(__pdata uint8_t air_rate) __nonbanked;
 
 /// configure the radio network ID
 ///
@@ -227,7 +227,7 @@ extern bool radio_configure(__pdata uint8_t air_rate);
 /// @param id			The network ID to be sent, and to filter
 ///				on reception
 ///
-extern void radio_set_network_id(uint16_t id);
+extern void radio_set_network_id(uint16_t id) __nonbanked;
 
 /// configure the radio node ID
 ///
@@ -236,47 +236,47 @@ extern void radio_set_network_id(uint16_t id);
 ///
 /// @param id			The node ID to be filter on reception
 ///
-extern void radio_set_node_id(uint16_t id);
+extern void radio_set_node_id(uint16_t id) __nonbanked;
 
 /// fetch the signal strength recorded for the most recent preamble
 ///
 /// @return			The RSSI register as reported by the radio
 ///				the last time a valid preamble was detected.
-extern uint8_t radio_last_rssi(void);
+extern uint8_t radio_last_rssi(void) __nonbanked;
 
 /// fetch the current signal strength for LBT
 ///
 /// @return			The RSSI register as reported by the radio
 ///
-extern uint8_t radio_current_rssi(void);
+extern uint8_t radio_current_rssi(void) __nonbanked;
 
 /// return the air data rate
 ///
 /// @return			The value passed to the last successful call
 ///				to radio_configure
 ///
-extern uint8_t radio_air_rate(void);
+extern uint8_t radio_air_rate(void) __nonbanked;
 
 /// set the radio transmit power (in dBm)
 ///
 /// @param power		The desired transmit power in dBm
 ///				
 ///
-extern void radio_set_transmit_power(uint8_t power);
+extern void radio_set_transmit_power(uint8_t power) __nonbanked;
 
 /// get the currend transmit power (in dBm)
 ///
 /// @return			The actual transmit power in dBm
 ///				
 ///
-extern uint8_t radio_get_transmit_power(void);
+extern uint8_t radio_get_transmit_power(void) __nonbanked;
 
 /// check if a packet is coming in
 ///
 /// @return			true if a packet is being received
 ///
 ///
-extern bool radio_receive_in_progress(void);
+extern bool radio_receive_in_progress(void) __nonbanked;
 
 /// send a MAVLink status report packet
 void MAVLink_report(void);
@@ -296,7 +296,7 @@ extern __pdata struct radio_settings settings;
 ///
 /// @return		temperature in degrees C, from 0 to 127
 ///
-extern int16_t radio_temperature(void);
+extern int16_t radio_temperature(void) __nonbanked;
 
 // maximum temperature we allow the radio to get to before
 // we start limiting the duty cycle
@@ -304,6 +304,6 @@ extern int16_t radio_temperature(void);
 #define MAX_PA_TEMPERATURE 100
 #endif
 
-extern void radio_set_diversity(bool enable);
+extern void radio_set_diversity(bool enable) __nonbanked;
 
 #endif // _RADIO_H_

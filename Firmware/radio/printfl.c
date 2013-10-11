@@ -62,7 +62,7 @@ static __pdata uint8_t capture_buffer_size;
 static __pdata uint8_t captured_size;
 
 static void 
-output_char(register char c)
+output_char(register char c) __nonbanked
 {
 	if (!capture) {
 		putchar(c);
@@ -75,7 +75,7 @@ output_char(register char c)
 
 // start capturing bytes from printf()
 void 
-printf_start_capture(__xdata uint8_t *buf, uint8_t size)
+printf_start_capture(__xdata uint8_t *buf, uint8_t size) __nonbanked
 {
 	capture_buffer = buf;
 	captured_size = 0;
@@ -85,14 +85,14 @@ printf_start_capture(__xdata uint8_t *buf, uint8_t size)
 
 // end capture, returning number of bytes that have been captured
 uint8_t 
-printf_end_capture(void)
+printf_end_capture(void) __nonbanked
 {
 	capture = false;
 	return captured_size;
 }
 
 void 
-vprintfl(const char * fmt, va_list ap) __reentrant
+vprintfl(const char * fmt, va_list ap) __reentrant __nonbanked
 {
 
 	for (; *fmt; fmt++) {
@@ -183,7 +183,7 @@ vprintfl(const char * fmt, va_list ap) __reentrant
 }
 
 void 
-printfl(const char *fmt, ...) __reentrant
+printfl(const char *fmt, ...) __reentrant __nonbanked
 {
 	va_list ap;
 

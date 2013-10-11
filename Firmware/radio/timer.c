@@ -52,7 +52,7 @@ INTERRUPT(T3_ISR, INTERRUPT_TIMER3)
 }
 
 void
-delay_set(register uint16_t msec)
+delay_set(register uint16_t msec) __nonbanked
 {
 	if (msec >= 2550) {
 		delay_counter = 255;
@@ -62,19 +62,19 @@ delay_set(register uint16_t msec)
 }
 
 void 
-delay_set_ticks(register uint8_t ticks)
+delay_set_ticks(register uint8_t ticks) __nonbanked
 {
 	delay_counter = ticks;
 }
 
 bool
-delay_expired(void)
+delay_expired(void) __nonbanked
 {
 	return delay_counter == 0;
 }
 
 void
-delay_msec(register uint16_t msec)
+delay_msec(register uint16_t msec) __nonbanked
 {
 	delay_set(msec);
 	while (!delay_expired())
@@ -99,7 +99,7 @@ INTERRUPT(T2_ISR, INTERRUPT_TIMER2)
 // return the 16 bit timer2 counter
 // this call costs about 2 microseconds
 uint16_t 
-timer2_16(void)
+timer2_16(void) __nonbanked
 {
 	register uint8_t low, high;
 	do {
@@ -115,7 +115,7 @@ timer2_16(void)
 // return microseconds since boot
 // this call costs about 5usec
 uint32_t 
-micros(void)
+micros(void) __nonbanked
 {
 	uint16_t low, high;
 	do {
@@ -129,7 +129,7 @@ micros(void)
 // return a 16 bit value that rolls over in approximately
 // one second intervals
 uint16_t 
-timer2_tick(void)
+timer2_tick(void) __nonbanked
 {
 	register uint16_t low, high;
 	do {
@@ -143,8 +143,9 @@ timer2_tick(void)
 
 // initialise timers
 void 
-timer_init(void)
+timer_init(void) __nonbanked
 {
+    SFRPAGE = LEGACY_PAGE;
 	// 100Hz timer tick using timer3
 	// Derive timer values from SYSCLK, just for laughs.
 	TMR3RLL	 = (65536UL - ((SYSCLK / 12) / 100)) & 0xff;
@@ -161,7 +162,7 @@ timer_init(void)
 
 // return some entropy
 uint8_t
-timer_entropy(void)
+timer_entropy(void) __nonbanked
 {
 	// use the SYSCLK/12 timer
 	return TMR2L;

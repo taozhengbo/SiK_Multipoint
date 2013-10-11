@@ -50,12 +50,12 @@ __pdata struct radio_settings settings;
 
 // internal helper functions
 //
-static void	register_write(uint8_t reg, uint8_t value) __reentrant;
-static uint8_t	register_read(uint8_t reg);
-static bool	software_reset(void);
-static void	set_frequency_registers(uint32_t frequency);
-static uint32_t scale_uint32(uint32_t value, uint32_t scale);
-static void	clear_status_registers(void);
+static void	register_write(uint8_t reg, uint8_t value) __reentrant __nonbanked;
+static uint8_t	register_read(uint8_t reg) __nonbanked;
+static bool	software_reset(void) __nonbanked;
+static void	set_frequency_registers(uint32_t frequency) __nonbanked;
+static uint32_t scale_uint32(uint32_t value, uint32_t scale) __nonbanked;
+static void	clear_status_registers(void) __nonbanked;
 
 // save and restore radio interrupt. We use this rather than
 // __critical to ensure we don't disturb the timer interrupt at all.
@@ -75,7 +75,7 @@ static void	clear_status_registers(void);
 // returns true on success, false on no packet available
 //
 bool
-radio_receive_packet(uint8_t *length, __xdata uint8_t * __pdata buf)
+radio_receive_packet(uint8_t *length, __xdata uint8_t * __pdata buf) __nonbanked
 {
 	__xdata uint8_t gout[3];
 	__data uint16_t crc1, crc2;
@@ -193,8 +193,11 @@ failed:
 // write to the radios transmit FIFO
 //
 static void
-radio_write_transmit_fifo(register uint8_t n, __xdata uint8_t * __pdata buffer)
+radio_write_transmit_fifo(register uint8_t n, __xdata uint8_t * __pdata buffer) __nonbanked
 {
+#ifdef CPU_SI1030
+	SFRPAGE = SPI1_PAGE;
+#endif
 	NSS1 = 0;
 	SPIF1 = 0;
 	SPI1DAT = (0x80 | EZRADIOPRO_FIFO_ACCESS);
@@ -209,12 +212,15 @@ radio_write_transmit_fifo(register uint8_t n, __xdata uint8_t * __pdata buffer)
 
 	SPIF1 = 0;
 	NSS1 = 1;
+#ifdef CPU_SI1030
+	SFRPAGE = LEGACY_PAGE;
+#endif
 }
 
 // check if a packet is being received
 //
 bool
-radio_receive_in_progress(void)
+radio_receive_in_progress(void) __nonbanked
 {
 	if (packet_received ||
 	    partial_packet_length != 0) {
@@ -232,7 +238,7 @@ radio_receive_in_progress(void)
 // a packet may be coming in
 //
 bool
-radio_preamble_detected(void)
+radio_preamble_detected(void) __nonbanked
 {
 	EX0_SAVE_DISABLE;
 	if (preamble_detected) {
@@ -249,7 +255,7 @@ radio_preamble_detected(void)
 // return the RSSI from the last packet
 //
 uint8_t
-radio_last_rssi(void)
+radio_last_rssi(void) __nonbanked
 {
 	return last_rssi;
 }
@@ -257,7 +263,7 @@ radio_last_rssi(void)
 // return the current signal strength, for LBT
 //
 uint8_t
-radio_current_rssi(void)
+radio_current_rssi(void) __nonbanked
 {
 	return register_read(EZRADIOPRO_RECEIVED_SIGNAL_STRENGTH_INDICATOR);
 }
@@ -265,7 +271,7 @@ radio_current_rssi(void)
 // return the actual air data rate in BPS
 //
 uint8_t
-radio_air_rate(void)
+radio_air_rate(void) __nonbanked
 {
 	return settings.air_data_rate;
 }
@@ -273,7 +279,7 @@ radio_air_rate(void)
 // clear the transmit FIFO
 //
 static void
-radio_clear_transmit_fifo(void)
+radio_clear_transmit_fifo(void) __nonbanked
 {
 	register uint8_t control;
 	control = register_read(EZRADIOPRO_OPERATING_AND_FUNCTION_CONTROL_2);
@@ -285,7 +291,7 @@ radio_clear_transmit_fifo(void)
 // clear the receive FIFO
 //
 static void
-radio_clear_receive_fifo(void) __reentrant
+radio_clear_receive_fifo(void) __reentrant __nonbanked
 {
 	register uint8_t control;
 	control = register_read(EZRADIOPRO_OPERATING_AND_FUNCTION_CONTROL_2);
@@ -302,7 +308,7 @@ radio_clear_receive_fifo(void) __reentrant
 // @return	    true if packet sent successfully
 //
 static bool
-radio_transmit_simple(__data uint8_t length, __xdata uint8_t * __pdata buf, __pdata uint16_t timeout_ticks)
+radio_transmit_simple(__data uint8_t length, __xdata uint8_t * __pdata buf, __pdata uint16_t timeout_ticks) __nonbanked
 {
 	__pdata uint16_t tstart;
 	bool transmit_started;
@@ -447,7 +453,7 @@ radio_transmit_simple(__data uint8_t length, __xdata uint8_t * __pdata buf, __pd
 // @return	    true if packet sent successfully
 //
 static bool
-radio_transmit_golay(uint8_t length, __xdata uint8_t * __pdata buf, __pdata uint16_t timeout_ticks)
+radio_transmit_golay(uint8_t length, __xdata uint8_t * __pdata buf, __pdata uint16_t timeout_ticks) __nonbanked
 {
 	__pdata uint16_t crc;
 	__xdata uint8_t gin[3];
@@ -497,7 +503,7 @@ radio_transmit_golay(uint8_t length, __xdata uint8_t * __pdata buf, __pdata uint
 // @return	    true if packet sent successfully
 //
 bool
-radio_transmit(uint8_t length, __xdata uint8_t * __pdata buf, uint16_t destination, __pdata uint16_t timeout_ticks)
+radio_transmit(uint8_t length, __xdata uint8_t * __pdata buf, uint16_t destination, __pdata uint16_t timeout_ticks) __nonbanked
 {
 	bool ret;
 	EX0_SAVE_DISABLE;
@@ -525,7 +531,7 @@ radio_transmit(uint8_t length, __xdata uint8_t * __pdata buf, uint16_t destinati
 // put the radio in receive mode
 //
 bool
-radio_receiver_on(void)
+radio_receiver_on(void) __nonbanked
 {
 	EX0 = 0;
 
@@ -555,7 +561,7 @@ radio_receiver_on(void)
 // initialise the radio hardware
 //
 bool
-radio_initialise(void)
+radio_initialise(void) __nonbanked
 {
 	uint8_t status;
 
@@ -601,7 +607,7 @@ radio_initialise(void)
 // set the transmit frequency
 //
 bool
-radio_set_frequency(__pdata uint32_t value)
+radio_set_frequency(__pdata uint32_t value) __nonbanked
 {
 	if (value < 240000000UL || value > 935000000UL) {
 		return false;
@@ -615,7 +621,7 @@ radio_set_frequency(__pdata uint32_t value)
 // set the channel spacing
 //
 bool
-radio_set_channel_spacing(__pdata uint32_t value)
+radio_set_channel_spacing(__pdata uint32_t value) __nonbanked
 {
 	if (value > 2550000L)
 		return false;
@@ -628,7 +634,7 @@ radio_set_channel_spacing(__pdata uint32_t value)
 // set the tx/rx frequency channel
 //
 void
-radio_set_channel(uint8_t channel)
+radio_set_channel(uint8_t channel) __nonbanked
 {
 	if (channel != settings.current_channel) {
 		settings.current_channel = channel;
@@ -640,7 +646,7 @@ radio_set_channel(uint8_t channel)
 // get the tx/rx frequency channel
 //
 uint8_t 
-radio_get_channel(void)
+radio_get_channel(void) __nonbanked
 {
 	return settings.current_channel;
 }
@@ -739,7 +745,7 @@ __code static const uint8_t reg_table_915[NUM_RADIO_REGISTERS][NUM_DATA_RATES] =
 // configure radio based on the air data rate
 //
 bool
-radio_configure(__pdata uint8_t air_rate)
+radio_configure(__pdata uint8_t air_rate) __nonbanked
 {
 	__pdata uint8_t i, rate_selection, control;
 
@@ -912,7 +918,7 @@ radio_configure(__pdata uint8_t air_rate)
 // set the radio transmit power (in dBm)
 //
 void 
-radio_set_transmit_power(uint8_t power)
+radio_set_transmit_power(uint8_t power) __nonbanked
 {
 	uint8_t i;
 
@@ -945,7 +951,7 @@ radio_set_transmit_power(uint8_t power)
 // get the current transmit power (in dBm)
 //
 uint8_t 
-radio_get_transmit_power(void)
+radio_get_transmit_power(void) __nonbanked
 {
 	return settings.transmit_power;
 }
@@ -953,7 +959,7 @@ radio_get_transmit_power(void)
 // setup a 16 bit network ID
 //
 void
-radio_set_network_id(uint16_t id)
+radio_set_network_id(uint16_t id) __nonbanked
 {
 	netid[0] = id&0xFF;
 	netid[1] = id>>8;
@@ -970,7 +976,7 @@ radio_set_network_id(uint16_t id)
 // setup a 16 bit node ID
 //
 void
-radio_set_node_id(uint16_t id)
+radio_set_node_id(uint16_t id) __nonbanked
 {
 	nodeId = id;
 	register_write(EZRADIOPRO_CHECK_HEADER_3, nodeId>>8);
@@ -983,10 +989,14 @@ radio_set_node_id(uint16_t id)
 /// @param value		The value to write
 ///
 static void
-register_write(uint8_t reg, uint8_t value) __reentrant
+register_write(uint8_t reg, uint8_t value) __reentrant __nonbanked
 {
 	EX0_SAVE_DISABLE;
 
+#ifdef CPU_SI1030
+	SFRPAGE = SPI1_PAGE;
+#endif
+	
 	NSS1 = 0;                           // drive NSS low
 	SPIF1 = 0;                          // clear SPIF
 	SPI1DAT = (reg | 0x80);             // write reg address
@@ -998,6 +1008,10 @@ register_write(uint8_t reg, uint8_t value) __reentrant
 	SPIF1 = 0;                          // leave SPIF cleared
 	NSS1 = 1;                           // drive NSS high
 
+#ifdef CPU_SI1030
+	SFRPAGE = LEGACY_PAGE;
+#endif
+	
 	EX0_RESTORE;
 }
 
@@ -1008,22 +1022,31 @@ register_write(uint8_t reg, uint8_t value) __reentrant
 /// @return			The value read
 ///
 static uint8_t
-register_read(uint8_t reg) __reentrant
+register_read(uint8_t reg) __reentrant __nonbanked
 {
 	register uint8_t value;
 	EX0_SAVE_DISABLE;
 
-	NSS1 = 0;				// dsrive NSS low
-	SPIF1 = 0;				// clear SPIF
-	SPI1DAT = (reg);			// write reg address
-	while (!TXBMT1);			// wait on TXBMT
-	SPI1DAT = 0x00;				// write anything
-	while (!TXBMT1);			// wait on TXBMT
-	while ((SPI1CFG & 0x80) == 0x80);	// wait on SPIBSY
-	value = SPI1DAT;			// read value
-	SPIF1 = 0;				// leave SPIF cleared
-	NSS1 = 1;				// drive NSS high
+#ifdef CPU_SI1030
+	SFRPAGE = SPI1_PAGE;
+#endif
+	
+	// Send SPI data using double buffered write
+	NSS1 = 0;                           // dsrive NSS low
+	SPIF1 = 0;                          // cleat SPIF
+	SPI1DAT = ( reg );                  // write reg address
+	while(!TXBMT1);                     // wait on TXBMT
+	SPI1DAT = 0x00;                     // write anything
+	while(!TXBMT1);                     // wait on TXBMT
+	while((SPI1CFG & 0x80) == 0x80);    // wait on SPIBSY
+	value = SPI1DAT;                    // read value
+	SPIF1 = 0;                          // leave SPIF cleared
+	NSS1 = 1;                           // drive NSS low
 
+#ifdef CPU_SI1030
+	SFRPAGE = LEGACY_PAGE;
+#endif
+	
 	EX0_RESTORE;
 
 	return value;
@@ -1033,8 +1056,13 @@ register_read(uint8_t reg) __reentrant
 ///
 /// @param n			The number of bytes to read
 static void
-read_receive_fifo(register uint8_t n, __xdata uint8_t * buf) __reentrant
+read_receive_fifo(register uint8_t n, __xdata uint8_t * buf) __reentrant __nonbanked
 {
+	
+#ifdef CPU_SI1030
+	SFRPAGE = SPI1_PAGE;
+#endif
+	
 	NSS1 = 0;				// drive NSS low
 	SPIF1 = 0;				// clear SPIF
 	SPI1DAT = EZRADIOPRO_FIFO_ACCESS;
@@ -1050,12 +1078,16 @@ read_receive_fifo(register uint8_t n, __xdata uint8_t * buf) __reentrant
 
 	SPIF1 = 0;				// leave SPIF cleared
 	NSS1 = 1;				// drive NSS high
+	
+#ifdef CPU_SI1030
+	SFRPAGE = LEGACY_PAGE;
+#endif
 }
 
 /// clear interrupts by reading the two status registers
 ///
 static void
-clear_status_registers(void)
+clear_status_registers(void) __nonbanked
 {
 	register_read(EZRADIOPRO_INTERRUPT_STATUS_1);
 	register_read(EZRADIOPRO_INTERRUPT_STATUS_2);
@@ -1068,7 +1100,7 @@ clear_status_registers(void)
 /// @return			value / scale, rounded to the nearest integer
 ///
 static uint32_t
-scale_uint32(__pdata uint32_t value, __pdata uint32_t scale)
+scale_uint32(__pdata uint32_t value, __pdata uint32_t scale) __nonbanked
 {
 	return (value + (scale >> 1)) / scale;
 }
@@ -1078,7 +1110,7 @@ scale_uint32(__pdata uint32_t value, __pdata uint32_t scale)
 ///
 /// @return			True if the radio reset correctly
 static bool
-software_reset(void)
+software_reset(void) __nonbanked
 {
 	uint8_t status;
 
@@ -1118,7 +1150,7 @@ software_reset(void)
 ///
 /// @param frequency		The frequency to set, in Hz
 static void
-set_frequency_registers(__pdata uint32_t frequency)
+set_frequency_registers(__pdata uint32_t frequency) __nonbanked
 {
 	uint8_t band;
 	__pdata uint16_t carrier;
@@ -1152,7 +1184,7 @@ set_frequency_registers(__pdata uint32_t frequency)
 /// @return		temperature in degrees C
 ///
 int16_t
-radio_temperature(void)
+radio_temperature(void) __nonbanked
 {
 	register int16_t temp_local;
 
@@ -1169,7 +1201,7 @@ radio_temperature(void)
 /// Turn off radio diversity
 ///
 void
-radio_set_diversity(bool enable)
+radio_set_diversity(bool enable) __nonbanked
 {
 	if (enable)
 	{
@@ -1195,7 +1227,7 @@ radio_set_diversity(bool enable)
 ///   - CRC error, when a packet fails the CRC check
 ///   - preamble valid, when a packet has started arriving
 ///
-INTERRUPT(Receiver_ISR, INTERRUPT_INT0)
+INTERRUPT(Receiver_ISR, INTERRUPT_INT0) __nonbanked
 {
 	__data uint8_t status, status2;
 #ifdef DEBUG_PINS_RADIO_TX_RX

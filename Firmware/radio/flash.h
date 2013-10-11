@@ -31,9 +31,9 @@
 ///		Prototypes for the flash interface.
 ///
 
-// The Si1020 doesn't have a flash scratch page
+// The Si1030 doesn't have a flash scratch page
 // so the read and write's are slightly diffrent
-#ifdef _BOARD_RFD900U
+#ifdef CPU_SI1030
 #define FLASH_ERASE_SCRATCH 0x03
 #define FLASH_WRITE_SCRATCH 0x01
 #define FLASH_READ_SCRATCH  0x00
