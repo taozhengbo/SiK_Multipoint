@@ -74,6 +74,7 @@ bl_main(void)
 #ifdef FLASH_BANKS
 	uint8_t		bank_state = PSBANK;
 #endif
+	
 	// Do early hardware init
 	hardware_init();
 
@@ -129,6 +130,10 @@ bl_main(void)
 			//
 			BOARD_FREQUENCY_REG = board_frequency;
 			BOARD_BL_VERSION_REG = BL_VERSION;
+#ifdef FLASH_BANKS
+			// Restore Banking Info
+			PSBANK = bank_state;
+#endif
 
 			// And jump
 			((void (__code *)(void))FLASH_APP_START)();

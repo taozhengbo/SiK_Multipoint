@@ -28,7 +28,7 @@
 # Makefile for the Si1000 UART bootloader.
 #
 
-VERSION		 =	1
+VERSION		 =	2
 PRODUCT		 =	bootloader~$(BOARD)
 PRODUCT_DIR	:=	$(patsubst %/,%,$(dir $(lastword $(MAKEFILE_LIST))))
 PRODUCT_INSTALL	 =	$(foreach frequency,$(FREQUENCIES), $(OBJROOT)/$(PRODUCT)~$(frequency).hex)
