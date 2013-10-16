@@ -273,6 +273,7 @@ parser = argparse.ArgumentParser(description="Firmware uploader for the SiK radi
 parser.add_argument('--port', action="store", help="port to upload to")
 parser.add_argument('--resetparams', action="store_true", help="reset all parameters to defaults")
 parser.add_argument("--baudrate", type=int, default=57600, help='baud rate')
+parser.add_argument('--forceBanking', action="store_true", help="force the programmer to use 24bit addressing")
 parser.add_argument('firmware', action="store", help="Firmware file to be uploaded")
 args = parser.parse_args()
 
@@ -292,6 +293,8 @@ for port in glob.glob(args.port):
 		sys.exit(1)
 	id, freq = up.identify()
 	print("board %x  freq %x" % (id, freq))
+	if(args.forceBanking):
+		fw.bankingDeteted = True;
 	if(fw.bankingDeteted):
-		print("Using 32bit addresses")
+		print("Using 24bit addresses")
 	up.upload(fw,args.resetparams)
