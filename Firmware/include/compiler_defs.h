@@ -3,7 +3,7 @@
 //-----------------------------------------------------------------------------
 // Portions of this file are copyright Maarten Brock
 // http://sdcc.sourceforge.net
-// Portions of this file are copyright 2009, Silicon Laboratories, Inc.
+// Portions of this file are copyright 2010, Silicon Laboratories, Inc.
 // http://www.silabs.com
 //
 // GNU LGPL boilerplate:
@@ -49,7 +49,7 @@
 // Example:
 // // my_mcu.c: main 'c' file for my mcu
 // #include <compiler_defs.h>  // this file
-// #include <C8051Fxxx_defs.h> // SFR definitions for specific MCU target
+// #include <C8051xxxx_defs.h> // SFR definitions for specific MCU target
 //
 // SBIT  (P0_1, 0x80, 1);      // Port 0 pin 1
 // SFR   (P0, 0x80);           // Port 0
@@ -65,7 +65,17 @@
 // Target:         C8051xxxx
 // Tool chain:     Generic
 // Command Line:   None
-//
+// 
+// Release 2.6 - 14 DEC 2012 (GO)
+// 	  -Added define for deprecated SDCC keyword 'at'
+// Release 2.5 - 12 SEP 2012 (TP)
+//    -Added defines for deprecated SDCC keywords bit and code
+// Release 2.4 - 27 AUG 2012 (TP)
+//    -Added defines for deprecated SDCC keywords interrupt, _asm, and _endasm
+// Release 2.3 - 27 MAY 2010 (DM)
+//    -Removed 'LOCATED_VARIABLE' pragma from Keil because it is not supported
+// Release 2.2 - 06 APR 2010 (ES)
+//    -Removed 'PATHINCLUDE' pragma from Raisonance section
 // Release 2.1 - 16 JUL 2009 (ES)
 //    -Added SEGMENT_POINTER macro definitions for SDCC, Keil, and Raisonance
 //    -Added LOCATED_VARIABLE_NO_INIT macro definitions for Raisonance
@@ -108,8 +118,6 @@
 #ifndef COMPILER_DEFS_H
 #define COMPILER_DEFS_H
 
-#include "cdt.h"
-
 //-----------------------------------------------------------------------------
 // Macro definitions
 //-----------------------------------------------------------------------------
@@ -118,6 +126,17 @@
 // http://sdcc.sourceforge.net
 
 #if defined SDCC
+
+#if (SDCC >= 300)
+
+#define interrupt __interrupt
+#define _asm __asm
+#define _endasm __endasm
+#define bit __bit
+#define code __code
+#define at __at
+
+#endif
 
 # define SEG_GENERIC
 # define SEG_FAR   __xdata
@@ -131,19 +150,19 @@
 
 # define SBIT(name, addr, bit)  __sbit  __at(addr+bit)                  name
 # define SFR(name, addr)        __sfr   __at(addr)                      name
-# define SFRX(name, addr)       __xdata volatile unsigned char __at(addr) name
+# define SFRX(name, addr)       xdata volatile unsigned char __at(addr) name
 # define SFR16(name, addr)      __sfr16 __at(((addr+1U)<<8) | addr)     name
 # define SFR16E(name, fulladdr) __sfr16 __at(fulladdr)                  name
 # define SFR32(name, addr)      __sfr32 __at(((addr+3UL)<<24) | ((addr+2UL)<<16) | ((addr+1UL)<<8) | addr) name
 # define SFR32E(name, fulladdr) __sfr32 __at(fulladdr)                  name
 
-# define INTERRUPT(name, vector) void name (void) __interrupt (vector)
-# define INTERRUPT_USING(name, vector, regnum) void name (void) __interrupt (vector) __using (regnum)
-# define INTERRUPT_PROTO(name, vector) void name (void) __interrupt (vector)
-# define INTERRUPT_PROTO_USING(name, vector, regnum) void name (void) __interrupt (vector) __using (regnum)
+# define INTERRUPT(name, vector) void name (void) interrupt (vector)
+# define INTERRUPT_USING(name, vector, regnum) void name (void) interrupt (vector) using (regnum)
+# define INTERRUPT_PROTO(name, vector) void name (void) interrupt (vector)
+# define INTERRUPT_PROTO_USING(name, vector, regnum) void name (void) interrupt (vector) using (regnum)
 
-# define FUNCTION_USING(name, return_value, parameter, regnum) return_value name (parameter) __using (regnum)
-# define FUNCTION_PROTO_USING(name, return_value, parameter, regnum) return_value name (parameter) __using (regnum)
+# define FUNCTION_USING(name, return_value, parameter, regnum) return_value name (parameter) using (regnum)
+# define FUNCTION_PROTO_USING(name, return_value, parameter, regnum) return_value name (parameter) using (regnum)
 // Note: Parameter must be either 'void' or include a variable type and name. (Ex: char temp_variable)
 
 # define SEGMENT_VARIABLE(name, vartype, locsegment) locsegment vartype name
@@ -202,8 +221,6 @@ typedef union UU32
 #elif defined __RC51__
 
 //#error Raisonance C51 detected.
-
-#pragma PATHINCLUDE (/RIDE/INC)
 
 # define SEG_GENERIC generic     //SEG_GENERIC only applies to pointers in Raisonance, not variables.
 # define SEG_FAR   xdata
@@ -320,7 +337,6 @@ typedef union UU32
 # define VARIABLE_SEGMENT_POINTER(name, vartype, targsegment) vartype targsegment * name
 # define SEGMENT_VARIABLE_SEGMENT_POINTER(name, vartype, targsegment, locsegment) vartype targsegment * locsegment name
 # define SEGMENT_POINTER(name, vartype, locsegment) vartype * locsegment name
-# define LOCATED_VARIABLE(name, vartype, locsegment, addr, init) vartype locsegment name _at_ addr
 # define LOCATED_VARIABLE_NO_INIT(name, vartype, locsegment, addr) vartype locsegment name _at_ addr
 
 // used with UU16
