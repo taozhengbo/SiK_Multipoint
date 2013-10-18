@@ -63,15 +63,15 @@ class firmware(object):
 class uploader(object):
 	'''Uploads a firmware file to the SiK bootloader'''
 
-	NOP		= chr(0x00)
-	OK		= chr(0x10)
+	NOP			= chr(0x00)
+	OK			= chr(0x10)
 	FAILED		= chr(0x11)
 	INSYNC		= chr(0x12)
-	EOC		= chr(0x20)
+	EOC			= chr(0x20)
 	GET_SYNC	= chr(0x21)
 	GET_DEVICE	= chr(0x22)
 	CHIP_ERASE	= chr(0x23)
-	LOAD_ADDRESS	= chr(0x24)
+	LOAD_ADDRESS= chr(0x24)
 	PROG_FLASH	= chr(0x25)
 	READ_FLASH	= chr(0x26)
 	PROG_MULTI	= chr(0x27)
@@ -81,6 +81,7 @@ class uploader(object):
 	
 	PROG_MULTI_MAX	= 32 # 64 causes serial hangs with some USB-serial adapters
 	READ_MULTI_MAX	= 255
+	BANK_PROGRAMING = -1
 
 	def __init__(self, portname, atbaudrate=57600):
 		print("Connecting to %s" % portname)
@@ -130,6 +131,9 @@ class uploader(object):
 	# send a LOAD_ADDRESS command
 	def __set_address(self, address, banking):
 		if(banking):
+			if(self.BANK_PROGRAMING != address >> 16):
+				self.BANK_PROGRAMING = address >> 16
+				print "BANK",self.BANK_PROGRAMING
 			self.__send(uploader.LOAD_ADDRESS
 				+ chr(address & 0xff)
 				+ chr((address >> 8) & 0xff)
@@ -258,11 +262,11 @@ class uploader(object):
 		return board_id, board_freq
 
 	def upload(self, fw, erase_params = False):
-		print("erase...")
+		print("erasing...")
 		self.__erase(erase_params)
-		print("program...")
+		print("programing...")
 		self.__program(fw)
-		print("verify...")
+		print("verifying...")
 		self.__verify(fw)
 		print("done.")
 		self.__reboot()
