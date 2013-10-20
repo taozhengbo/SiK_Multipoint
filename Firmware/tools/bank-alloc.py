@@ -207,28 +207,39 @@ if ext == '.ihx':
 	print bankLine
 	print "Bin-Packing results (target allocation):".center(len(bankLine))
 	print bankLine
-	print "Segment - max - alloc"
+	print "Segment - max - alloc -  Start - End Location"
 	for bank in fw.sanity_check.keys():
+		if bank in bankReserved:
+			thisBank = bankSize-bankReserved[bank]
+		else:
+			thisBank = bankSize
+		
 		if bank == 0:
 			print "Home".rjust(7),
 		else:
 			print ("Bank %d"%bank).rjust(7),
-		
-		if bank in bankReserved:
-			print str(bankSize-bankReserved[bank]).rjust(6),
-		else:
-			print str(bankSize).rjust(6),
-		print str(fw.sanity_check[bank]).rjust(6)
-		
-		if bank in bankReserved and (bankSize-bankReserved[bank] - fw.sanity_check[bank]) < 1 or bankSize - fw.sanity_check[bank] < 1:
+
+		print str(thisBank).rjust(6),
+		print str(fw.sanity_check[bank][0]).rjust(6),
+		print ("0x%04X"%fw.sanity_check[bank][1]).rjust(8),
+		print ("- 0x%04X"%fw.sanity_check[bank][2])
+
+
+		if thisBank - fw.sanity_check[bank][0] < 1:
 			bankError.append(bank)
-		
+		if bank == 0 and fw.sanity_check[bank][2] > 0x7FFF:
+			bankError.append(bank)
+		elif thisBank + 0x8000 < fw.sanity_check[bank][2]:
+			bankError.append(bank)
 		if bank > 3:
 			bankNonexist.append(bank)
 	if len(bankError) > 0:
 		for bank in bankError:
 			print bankLine
-			print ("-- ERROR: OVER FLOW IN SEGMENT %s --"%bank).center(len(bankLine))
+			if bank == 0:
+				print ("-- ERROR: OVER FLOW IN SEGMENT HOME --").center(len(bankLine))
+			else:
+				print ("-- ERROR: OVER FLOW IN SEGMENT %s --"%bank).center(len(bankLine))
 			print bankLine
 		sys.exit(1)
 	if len(bankNonexist) > 0:
@@ -283,7 +294,7 @@ print 'Total Size =', sizes['total'], 'bytes (' + \
 	str(sizes['user']), 'user-allocated,', \
 	str(sizes['libs']), 'const+libs)'
 
-bins['HOME'][0] += sizes['libs']
+#bins['HOME'][0] += sizes['libs']
 
 print 'Preallocations: HOME=' + str(bins['HOME'][0]),
 for bin_id in ['BANK1', 'BANK2', 'BANK3', 'BANK4', 'BANK5', 'BANK6', 'BANK7']:

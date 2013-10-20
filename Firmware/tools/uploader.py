@@ -26,9 +26,16 @@ class firmware(object):
 			address = (ord(binstr[1]) << 8) + ord(binstr[2]) + (self.upperaddress << 16)
 			bytes   = bytearray(binstr[4:])
 			if self.upperaddress in self.sanity_check:
-				self.sanity_check[self.upperaddress] += len(bytes)
+				self.sanity_check[self.upperaddress][0] += len(bytes)
+				if self.sanity_check[self.upperaddress][1] > (ord(binstr[1]) << 8) + ord(binstr[2]):
+					self.sanity_check[self.upperaddress][1] = (ord(binstr[1]) << 8) + ord(binstr[2])
+				if self.sanity_check[self.upperaddress][2] < (ord(binstr[1]) << 8) + ord(binstr[2]):
+					self.sanity_check[self.upperaddress][2] = (ord(binstr[1]) << 8) + ord(binstr[2])
 			else:
-				self.sanity_check[self.upperaddress] = len(bytes)
+				self.sanity_check[self.upperaddress] = []
+				self.sanity_check[self.upperaddress].append(len(bytes))
+				self.sanity_check[self.upperaddress].append((ord(binstr[1]) << 8) + ord(binstr[2]))
+				self.sanity_check[self.upperaddress].append((ord(binstr[1]) << 8) + ord(binstr[2]))
 			self.__insert(address, bytes)
 
 	# insert the byte array into the ranges dictionary, merging as we go
