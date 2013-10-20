@@ -7,8 +7,6 @@ import sys, argparse, binascii, serial, glob
 
 class firmware(object):
 	'''Loads a firmware file'''
-	upperaddress = 0x0000
-	bankingDeteted = False;
 
 	# parse a single IntelHex line and obtain the byte array and address
 	def __parseline(self, line):
@@ -27,6 +25,10 @@ class firmware(object):
 		elif (command == 0):
 			address = (ord(binstr[1]) << 8) + ord(binstr[2]) + (self.upperaddress << 16)
 			bytes   = bytearray(binstr[4:])
+			if self.upperaddress in self.sanity_check:
+				self.sanity_check[self.upperaddress] += len(bytes)
+			else:
+				self.sanity_check[self.upperaddress] = len(bytes)
 			self.__insert(address, bytes)
 
 	# insert the byte array into the ranges dictionary, merging as we go
@@ -49,6 +51,9 @@ class firmware(object):
 
 	def __init__(self, path):
 		self.ranges = dict()
+		self.upperaddress = 0x0000
+		self.bankingDeteted = False
+		self.sanity_check = dict()
 
 		# read the file
 		# XXX should have some file metadata here too ...
@@ -270,35 +275,35 @@ class uploader(object):
 		self.__verify(fw)
 		print("done.")
 		self.__reboot()
-	
 
-# Parse commandline arguments
-parser = argparse.ArgumentParser(description="Firmware uploader for the SiK radio system.")
-parser.add_argument('--port', action="store", help="port to upload to")
-parser.add_argument('--resetparams', action="store_true", help="reset all parameters to defaults")
-parser.add_argument("--baudrate", type=int, default=57600, help='baud rate')
-parser.add_argument('--forceBanking', action="store_true", help="force the programmer to use 24bit addressing")
-parser.add_argument('firmware', action="store", help="Firmware file to be uploaded")
-args = parser.parse_args()
+if __name__ == '__main__':
+	# Parse commandline arguments
+	parser = argparse.ArgumentParser(description="Firmware uploader for the SiK radio system.")
+	parser.add_argument('--port', action="store", help="port to upload to")
+	parser.add_argument('--resetparams', action="store_true", help="reset all parameters to defaults")
+	parser.add_argument("--baudrate", type=int, default=57600, help='baud rate')
+	parser.add_argument('--forceBanking', action="store_true", help="force the programmer to use 24bit addressing")
+	parser.add_argument('firmware', action="store", help="Firmware file to be uploaded")
+	args = parser.parse_args()
 
-# Load the firmware file
-fw = firmware(args.firmware)
-
-ports = glob.glob(args.port)
-if not ports:
-	print("No matching ports for %s" % args.port)
-	sys.exit(1)
-# Connect to the device and identify it
-for port in glob.glob(args.port):
-	print("uploading to port %s" % port)
-	up = uploader(port, atbaudrate=args.baudrate)
-	if not up.check():
-		print("Failed to contact bootloader")
-		sys.exit(1)
-	id, freq = up.identify()
-	print("board %x  freq %x" % (id, freq))
+	# Load the firmware file
+	fw = firmware(args.firmware)
 	if(args.forceBanking):
 		fw.bankingDeteted = True;
-	if(fw.bankingDeteted):
-		print("Using 24bit addresses")
-	up.upload(fw,args.resetparams)
+
+	ports = glob.glob(args.port)
+	if not ports:
+		print("No matching ports for %s" % args.port)
+		sys.exit(1)
+	# Connect to the device and identify it
+	for port in glob.glob(args.port):
+		print("uploading to port %s" % port)
+		up = uploader(port, atbaudrate=args.baudrate)
+		if not up.check():
+			print("Failed to contact bootloader")
+			sys.exit(1)
+		id, freq = up.identify()
+		print("board %x  freq %x" % (id, freq))
+		if(fw.bankingDeteted):
+			print("Using 24bit addresses")
+		up.upload(fw,args.resetparams)

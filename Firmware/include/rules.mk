@@ -77,6 +77,7 @@ endif
 CC		 =	sdcc -mmcs51
 AS		 =	sdas8051 -jloscp
 LD		 =	sdcc
+MD5		 =	md5
 BANK_ALLOC	 =	./tools/bank-alloc.py
 INCLUDES	 =	$(SRCROOT)/include
 CFLAGS		+=	$(addprefix -I,$(INCLUDES))
@@ -133,13 +134,30 @@ $(OBJROOT)/%.rel: $(PRODUCT_DIR)/%.asm
 	$(v)$(AS) $(ASFLAGS) $(subst $(PRODUCT_DIR),$(OBJROOT),$<)
 
 clean:
-	$(v)rm -rf $(OBJROOT)
+	$(v)rm -rf $(OBJROOT)/../*
 
 install:	$(PRODUCT_INSTALL)
 	@echo INSTALL $^
 	$(v)mkdir -p $(DSTROOT)
 	$(v)cp $(PRODUCT_INSTALL) $(DSTROOT)/
 	@./tools/check_code.py $^ $(XRAM_SIZE)
+ifeq ($(MODEL_HUGE), 1)
+	@echo ''
+	@echo FINAL ALLOCATION $^
+	$(v)$(BANK_ALLOC) $^ $(CODE_OFFSET_HOME) 0x00 0x00 $(CODE_OFFSET_BANK3)
+endif
+
+ifeq ($(MODEL_HUGE), 1)
+MD5_INPUT	:=	`touch $(OBJROOT)/segment.md5; cat $(OBJROOT)/segment.md5`
+MD5_FILE	:=	`$(MD5) $(PRODUCT_DIR)/segment.rules | cut -f2 -d '=' | tr -d ' '`
+segment.rules:
+	@mkdir -p $(OBJROOT)
+	$(v)if [ "$(MD5_INPUT)" != "$(MD5_FILE)" ]; then \
+		rm -rf $(OBJROOT)/*; \
+		echo $(MD5_FILE) > $(OBJROOT)/segment.md5; \
+	fi
+-include segment.rules
+endif
 
 #
 # Dependencies

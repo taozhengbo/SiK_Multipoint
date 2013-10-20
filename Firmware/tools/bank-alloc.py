@@ -156,25 +156,100 @@ def relocate(module, bank):
 		sys.stdout.write(line)
 	return
 
-if len(sys.argv) < 3:
+def usage():
 	print 'Usage:'
 	print 'bank-alloc.py project path_to_segment_rules [offset]'
 	print 'bank-alloc.py source_file path_to_segment_rules project'
+	print 'bank-alloc.py hex_file [offset]'
+
+
+if len(sys.argv) < 2:
+	usage()
 	sys.exit(1)
 
 modules = list()
 file_name = sys.argv[1]
-segment_rules = sys.argv[2]
 
 # Magic: Guess whether we want to determine the code bank for a code file
 # or whether we want to bin-pack
 basename, ext = os.path.splitext(file_name)
+
+if ext == '.ihx':
+	# Code Segment determination
+	if len(sys.argv) < 2:
+		usage()
+		sys.exit(1)
+
+	from uploader import firmware
+
+	bankSize = 0x8000
+	bankReserved = {}
+	bankError = []
+	bankNonexist = []
+	bankLine = "----------------------------------------"
+
+	for x in range(0, 8):
+		if len(sys.argv) > (2+x) and sys.argv[2+x] is not None:
+			try:
+				offset = int(sys.argv[2+x], 0)
+				if offset > 1023:
+					bankReserved[x] = offset
+				else:
+					bankReserved[x] = offset * 1024
+			except ValueError:
+				pass
+		else:
+			break
+
+	# Load the firmware file
+	fw = firmware(file_name)
+
+	print bankLine
+	print "Bin-Packing results (target allocation):".center(len(bankLine))
+	print bankLine
+	print "Segment - max - alloc"
+	for bank in fw.sanity_check.keys():
+		if bank == 0:
+			print "Home".rjust(7),
+		else:
+			print ("Bank %d"%bank).rjust(7),
+		
+		if bank in bankReserved:
+			print str(bankSize-bankReserved[bank]).rjust(6),
+		else:
+			print str(bankSize).rjust(6),
+		print str(fw.sanity_check[bank]).rjust(6)
+		
+		if bank in bankReserved and (bankSize-bankReserved[bank] - fw.sanity_check[bank]) < 1 or bankSize - fw.sanity_check[bank] < 1:
+			bankError.append(bank)
+		
+		if bank > 3:
+			bankNonexist.append(bank)
+	if len(bankError) > 0:
+		for bank in bankError:
+			print bankLine
+			print ("-- ERROR: OVER FLOW IN SEGMENT %s --"%bank).center(len(bankLine))
+			print bankLine
+		sys.exit(1)
+	if len(bankNonexist) > 0:
+		for bank in bankNonexist:
+			print bankLine
+			print ("-- ERROR: NO SUCH SEGMENT %s --"%bank).center(len(bankLine))
+			print bankLine
+		sys.exit(1)
+	print bankLine
+	exit()
+
+if len(sys.argv) > 2:
+	segment_rules = sys.argv[2]
+else:
+	usage()
+	sys.exit(1)
+
 if ext == '.c':
 	# Code Segment determination
 	if len(sys.argv) < 4:
-		print 'Usage:'
-		print 'bank-alloc.py project path_to_segment_rules [offset]'
-		print 'bank-alloc.py source_file path_to_segment_rules project'
+		usage()
 		sys.exit(1)
 	# Code Segment determination
 	seg = get_source_seg(file_name, sys.argv[3], segment_rules)
@@ -257,6 +332,7 @@ for bin_id in ['HOME', 'BANK1', 'BANK2', 'BANK3', 'BANK4', 'BANK5', 'BANK6', 'BA
 			pack = 1 # Case a error and return after all banks printed
 		else:
 			print ""
+print "UNALLOC".rjust(7), "?".rjust(6), str(sizes['libs']).rjust(6)
 print "----------------------------------------"
 
 if pack > 0:
