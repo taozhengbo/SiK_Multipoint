@@ -88,13 +88,15 @@ flash_address_visible(uint32_t address)
 		case 3:
 			if ((address & 0xFFFF) >= FLASH_SCRATCH)
 				return false;
-		// Banks 1,2 are always good
+		// Banks 1,2 are always good above 0x7FFF
 		case 2:
 		case 1:
-				break;
+			if ((address & 0xFFFF) < 0x8000)
+				return false;
+			break;
 		// Home Bank shouldn't be writing to the bootloader..
 		case 0:
-			if ((address & 0xFFFF) < FLASH_APP_START)
+			if ((address & 0xFFFF) < FLASH_APP_START || (address & 0xFFFF) > 0x7FFF)
 				return false;
 			break;
 		default:
