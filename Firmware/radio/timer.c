@@ -38,7 +38,8 @@ static __data volatile uint8_t delay_counter;
 static __data volatile uint16_t timer2_high;
 
 
-INTERRUPT(T3_ISR, INTERRUPT_TIMER3)
+void
+T3_ISR_code(void)
 {
 	// re-arm the interrupt by clearing TF3H
 	TMR3CN = 0x04;
@@ -83,7 +84,8 @@ delay_msec(register uint16_t msec) __nonbanked
 
 
 // timer2 interrupt called every 32768 microseconds
-INTERRUPT(T2_ISR, INTERRUPT_TIMER2)
+void
+T2_ISR_code(void)
 {
 	// re-arm the interrupt by clearing TF2H
 	TMR2CN = 0x04;

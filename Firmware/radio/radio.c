@@ -1227,7 +1227,8 @@ radio_set_diversity(bool enable) __nonbanked
 ///   - CRC error, when a packet fails the CRC check
 ///   - preamble valid, when a packet has started arriving
 ///
-INTERRUPT(Receiver_ISR, INTERRUPT_INT0) __nonbanked
+void
+Receiver_ISR_code(void)
 {
 	__data uint8_t status, status2;
 #ifdef DEBUG_PINS_RADIO_TX_RX

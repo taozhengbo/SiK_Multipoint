@@ -103,7 +103,7 @@ static void serial_device_set_speed(register uint8_t speed) __nonbanked;
 #define SERIAL_CTS_THRESHOLD_HIGH RX_BUFF_MAX/2
 
 void
-serial_interrupt(void) __interrupt(INTERRUPT_UART0)
+serial_interrupt_code(void)
 {
 	register uint8_t	c;
 
@@ -181,7 +181,7 @@ serial_check_rts(void) __nonbanked
 }
 
 void
-serial_init(register uint8_t speed) __nonbanked
+serial_init(register uint8_t speed)
 {
 	SFRPAGE = LEGACY_PAGE;
 	
@@ -426,23 +426,13 @@ serial_read_space(void) __nonbanked
 	return space;
 }
 
-//void
-//putchar(char c) __reentrant __nonbanked
-//{
-//	if (c == '\n')
-//		_serial_write('\r');
-//	_serial_write(c);
-//}
-
 void
 putchar(char c) __reentrant __nonbanked
 {
-	while (!TI0)
-		;
-	TI0 = 0;
-	SBUF0 = c;
+	if (c == '\n')
+		_serial_write('\r');
+	_serial_write(c);
 }
-
 
 ///
 /// Table of supported serial speed settings.

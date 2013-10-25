@@ -16,28 +16,30 @@
 #  All files without an associated rule get allocated to a bank automatically
 
 # Files with ISRs must be in HOME
-HOME timer.c
-HOME radio.c
-HOME serial.c
+BANK3 timer.c
+BANK3 radio.c
+BANK3 serial.c
 HOME main.c
-HOME printfl.c
+BANK3 printfl.c
 
-BANK2 rtc.c
-BANK2 pins_user.c
-BANK2 mavlink.c
+BANK3 rtc.c
+BANK3 pins_user.c
+BANK3 mavlink.c
 
-BANK1 packet.c
+BANK3 packet.c
 BANK3 golay.c
-BANK1 crc.c
+BANK3 crc.c
 
-# There is a Parameter shared between these functions, do they need to be in the same bank?
-BANK1 parameters.c
-BANK1 aesEncrypt.c
-BANK2 at.c
+# There is a Parameter shared between these functions and should be in the same bank?
+BANK3 parameters.c
+BANK3 aesEncrypt.c
+BANK3 at.c
+BANK3 main_init.c
 
 # freq_hooping needs to be in the same bank as tdm (due to __nonbanked to save space)
-BANK1 freq_hopping.c
-BANK1 tdm.c
+BANK3 freq_hopping.c
+BANK3 tdm.c
+
 
 # Flash MUST be in bank3 as it needs to read the end of this page
 BANK3 flash.c

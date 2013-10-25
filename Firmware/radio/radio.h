@@ -60,7 +60,7 @@
 #include "board.h"
 #include "serial.h"
 #include "board_info.h"
-#include "aesEncrypt.h"
+//#include "aesEncrypt.h"
 #include "pins_user.h"
 #include "parameters.h"
 #include "at.h"
@@ -97,8 +97,8 @@ extern bool feature_rtscts;
 ///				to be printed.
 ///
 extern void	panic(char *fmt, ...) __nonbanked;
-
-
+extern void Receiver_ISR_code(void);
+extern void Reciver_ISR_timer(void);
 /// Alternate vprintf implementation
 ///
 extern void	vprintfl(const char * fmt, va_list ap) __reentrant __nonbanked;

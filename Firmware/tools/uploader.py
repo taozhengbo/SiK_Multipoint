@@ -29,13 +29,13 @@ class firmware(object):
 				self.sanity_check[self.upperaddress][0] += len(bytes)
 				if self.sanity_check[self.upperaddress][1] > (ord(binstr[1]) << 8) + ord(binstr[2]):
 					self.sanity_check[self.upperaddress][1] = (ord(binstr[1]) << 8) + ord(binstr[2])
-				if self.sanity_check[self.upperaddress][2] < (ord(binstr[1]) << 8) + ord(binstr[2]):
-					self.sanity_check[self.upperaddress][2] = (ord(binstr[1]) << 8) + ord(binstr[2])
+				if self.sanity_check[self.upperaddress][2] < (ord(binstr[1]) << 8) + ord(binstr[2]) + len(bytes):
+					self.sanity_check[self.upperaddress][2] = (ord(binstr[1]) << 8) + ord(binstr[2]) +len(bytes)
 			else:
 				self.sanity_check[self.upperaddress] = []
 				self.sanity_check[self.upperaddress].append(len(bytes))
 				self.sanity_check[self.upperaddress].append((ord(binstr[1]) << 8) + ord(binstr[2]))
-				self.sanity_check[self.upperaddress].append((ord(binstr[1]) << 8) + ord(binstr[2]))
+				self.sanity_check[self.upperaddress].append((ord(binstr[1]) << 8) + ord(binstr[2]) + len(bytes))
 			self.__insert(address, bytes)
 
 	# insert the byte array into the ranges dictionary, merging as we go
@@ -145,7 +145,10 @@ class uploader(object):
 		if(banking):
 			if(self.BANK_PROGRAMING != address >> 16):
 				self.BANK_PROGRAMING = address >> 16
-				print "BANK",self.BANK_PROGRAMING
+				if self.BANK_PROGRAMING == 0:
+					print "HOME"
+				else:
+					print "BANK",self.BANK_PROGRAMING
 			self.__send(uploader.LOAD_ADDRESS
 				+ chr(address & 0xff)
 				+ chr((address >> 8) & 0xff)

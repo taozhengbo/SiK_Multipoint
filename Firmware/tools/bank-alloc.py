@@ -234,19 +234,19 @@ if ext == '.ihx':
 		if bank > 3:
 			bankNonexist.append(bank)
 	if len(bankError) > 0:
-		for bank in bankError:
-			print bankLine
+		print bankLine
+		for bank in list(set(bankError)):
 			if bank == 0:
 				print ("-- ERROR: OVER FLOW IN SEGMENT HOME --").center(len(bankLine))
 			else:
 				print ("-- ERROR: OVER FLOW IN SEGMENT %s --"%bank).center(len(bankLine))
-			print bankLine
+		print bankLine
 		sys.exit(1)
 	if len(bankNonexist) > 0:
-		for bank in bankNonexist:
-			print bankLine
+		print bankLine
+		for bank in list(set(bankNonexist)):
 			print ("-- ERROR: NO SUCH SEGMENT %s --"%bank).center(len(bankLine))
-			print bankLine
+		print bankLine
 		sys.exit(1)
 	print bankLine
 	exit()
@@ -332,22 +332,22 @@ of = open(basename + '.banks', 'w')
 pack = bin_pack(modules, bins, of)
 of.close()
 
-print "----------------------------------------"
-print "Bin-Packing results (target allocation):"
-print "Segment - max - alloc"
-for bin_id in ['HOME', 'BANK1', 'BANK2', 'BANK3', 'BANK4', 'BANK5', 'BANK6', 'BANK7']:
-	if bins[bin_id][0] > 0:
-		print bin_id.rjust(7), str(bins[bin_id][1]).rjust(6), str(bins[bin_id][0]).rjust(6),
-		if(bins[bin_id][1] < bins[bin_id][0]):
-			print "---- ERROR: OVER FLOW IN SEGMENT %s----"%bin_id
-			pack = 1 # Case a error and return after all banks printed
-		else:
-			print ""
-print "UNALLOC".rjust(7), "?".rjust(6), str(sizes['libs']).rjust(6)
-print "----------------------------------------"
-
-if pack > 0:
-	sys.exit(1)
+#print "----------------------------------------"
+#print "Bin-Packing results (target allocation):"
+#print "Segment - max - alloc"
+#for bin_id in ['HOME', 'BANK1', 'BANK2', 'BANK3', 'BANK4', 'BANK5', 'BANK6', 'BANK7']:
+#	if bins[bin_id][0] > 0:
+#		print bin_id.rjust(7), str(bins[bin_id][1]).rjust(6), str(bins[bin_id][0]).rjust(6),
+#		if(bins[bin_id][1] < bins[bin_id][0]):
+#			print "---- ERROR: OVER FLOW IN SEGMENT %s----"%bin_id
+#			pack = 1 # Case a error and return after all banks printed
+#		else:
+#			print ""
+#print "UNALLOC".rjust(7), "?".rjust(6), str(sizes['libs']).rjust(6)
+#print "----------------------------------------"
+#
+#if pack > 0:
+#	sys.exit(1)
 
 # If we reach here we seem to have a sane allocation. Start changing .rel files
 for module in modules:

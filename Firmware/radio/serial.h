@@ -45,8 +45,9 @@
 ///				to serial_device_set_speed at the appropriate
 ///				point during initialisation.
 ///
-extern void	serial_init(register uint8_t speed) __nonbanked;
+extern void	serial_init(register uint8_t speed);
 
+extern void serial_interrupt_code(void);
 /// check if a serial speed is valid
 ///
 /// @param	speed		The serial speed to configure

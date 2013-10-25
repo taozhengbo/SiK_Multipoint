@@ -33,6 +33,9 @@
 ///
 extern uint16_t timer2_16(void) __nonbanked;
 
+extern void T3_ISR_code(void);
+extern void T2_ISR_code(void);
+
 /// return microseconds since boot
 ///
 /// @return		microseconds since boot
