@@ -94,32 +94,22 @@ SBIT(PIN_ENABLE,   SFR_P0, 3);
 #define BUTTON_BOOTLOAD	PIN_CONFIG
 
 // Serial flow control
-#define SERIAL_RTS	PIN_ENABLE	// always an input
-#define SERIAL_CTS	PIN_CONFIG	// input in bootloader, output in app
+//#define SERIAL_RTS	PIN_ENABLE	// always an input
+//#define SERIAL_CTS	PIN_CONFIG	// input in bootloader, output in app
 
 // board-specific hardware config
 #define HW_INIT							\
-	do {							\
-		/* GPIO config */ \
-		P0SKIP  |= 0xCF;		/* P0 UART avail on XBAR */ \
-		P1SKIP  |= 0xFF;		/* P1 nothing avail on XBAR, All GPIO */  \
-		P2SKIP  |= 0x00; /*78;*/	/* P2 SPI1, CEX0 avail on XBAR */	\
+	do { \
 		SFRPAGE  = CONFIG_PAGE; \
-		P1MDOUT |= 0xF5;		/* SCK1, MOSI1, MISO1 push-pull was 60 */ \
-		P1DRV   |= 0xF5;		/* SPI signals use high-current mode, LEDs and PAEN High current drive was 60 */ \
-		P2MDOUT |= 0x20;		/* PA_ENABLE (P2.5) output */ \
-		P2DRV   |= 0x20;		/* PA_ENABLE (P2.5) high current drive*/ \
 		P3MDOUT |= 0x40;		/* Led Red */ \
 		P3DRV   |= 0x40;		/* Led Red */ \
-		SFRPAGE  = LEGACY_PAGE; \
-		/* INT0 is the radio interrupt, on P0.7 */ \
-		IT01CF   = (IT01CF & 0xf) | 0x7; \
-		IT0      = 0;			/* INT0 level triggered */	\
+		SFRPAGE  = LEGACY_PAGE;	\
 		/* Setup Timers */ \
-		TL1		 = TH1;			/* Init Timer1 */ \
 		TMOD	 = (TMOD & ~0xf0) | 0x20;		/* TMOD: timer 1 in 8-bit autoreload */ \
 		TR1		 = 1;			/* START Timer1 */ \
 		TI0		 = 1;			/* Indicate TX0 ready */ \
+		\
+		P2       = 0xFF;                    /* P2 bug fix for SDCC and Raisonance*/ \
 	} while(0)
 
 // application/board-specific hardware config

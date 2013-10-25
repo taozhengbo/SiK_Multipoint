@@ -59,6 +59,8 @@ void	flash_erase_app(void);
 ///
 void	flash_erase_scratch(void);
 
+#define NON_BANK_SUPPORT
+
 // If we have banking support, change to 32bit addressing..
 #ifdef FLASH_BANKS
 /// Writes a byte to flash.

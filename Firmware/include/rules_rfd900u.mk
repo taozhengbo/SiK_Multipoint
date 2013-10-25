@@ -28,11 +28,15 @@
 #
 # Configuration options for the RFD900U board.
 #
-FREQUENCIES			 = 915
-XRAM_SIZE			 = 8448
-HAVE_BANKING		 = 1
-CFLAGS				+= --constseg HOME
-CODE_OFFSET_HOME     = 0x400
-CODE_OFFSET_BANK3    = 0x800
-LDFLAGS				+= --model-huge --out-fmt-ihx --iram-size 256 --xram-size $(XRAM_SIZE) --code-loc $(CODE_OFFSET_HOME) --code-size 0x1F400 --stack-size 64
+FREQUENCIES				 = 915
+XRAM_SIZE				 = 8448
+HAVE_BANKING			 = 0
+CPU_CC1030				 = 1
+#CFLAGS					+= --constseg CONSEG
+#LDFLAGS				+= -Wl-bCONSEG=0x28000
+CODE_OFFSET_HOME		 = 0x400
+CODE_OFFSET_BANK3		 = 0x800
+#--model-huge
+LDFLAGS				+= --model-large --out-fmt-ihx --iram-size 256 --xram-size $(XRAM_SIZE) --code-loc $(CODE_OFFSET_HOME) --code-size 0xF400 --stack-size 64
 BOOTLDFLAGS			 = --iram-size 256 --xram-size $(XRAM_SIZE) --stack-size 64 --nostdlib -Wl-r -Wl-bHIGHCSEG=0x0FC00
+# --code-size 0x1F400
