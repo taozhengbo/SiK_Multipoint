@@ -482,15 +482,17 @@ at_p (void)
 	switch (at_cmd[3]) {
 			
 		// Set pin to output, turn mirroring off pulling pin to ground
+        // ATPO=1        Set Pin to Output
 		case 'O':
 			pins_user_set_io(pinId, PIN_OUTPUT);
 			break;
 
-		// Need to figure out how to set pins to Input/Output
+		// ATPI=1        Set Pin to Input
 		case 'I':
 			pins_user_set_io(pinId, PIN_INPUT);
 			break;
 		
+        // ATPR=1        Read Pin Direction
 		case 'R':
 			if(pins_user_get_io(pinId) == PIN_INPUT)
 				printf("[%u] val:%u\n", nodeId, pins_user_get_adc(pinId));
@@ -499,6 +501,7 @@ at_p (void)
 			return;
 			break;
 			
+        // ATPC=1,1      Turn pin on
 		case 'C':
 			if(!isdigit(at_cmd[7]) || !pins_user_set_value(pinId, (at_cmd[7]-'0')))
 			{
@@ -506,6 +509,16 @@ at_p (void)
 				return;
 			}
 			break;
+        
+        // ATPM=1,1,0    Mirror pin on node 0
+        // ATPM=1        Turn pin mirroring off
+//        case 'M':
+//			if(!isdigit(at_cmd[7]) || !pins_user_set_value(pinId, (at_cmd[7]-'0')))
+//			{
+//				at_error();
+//				return;
+//			}
+//			break;
 		default:
 			at_error();
 			return;

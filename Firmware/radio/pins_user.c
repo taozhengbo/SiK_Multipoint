@@ -33,6 +33,7 @@
 ///
 
 #include "pins_user.h"
+#include "tdm.h"
 
 // pin_values defined as extern in parameters
 
@@ -47,10 +48,12 @@ __code const struct pins_user_map {
 	{2, 1}, // 2 - P2.1
 	{2, 0}, // 3 - P2.0
 	{2, 6}, // 4 - P2.6
-	{0, 1}, // 5 - P0.1
+	{0, 1}, // 5 - P0.1 (Interrupt)
 };
+#define PIN_INTERRUPT 5
 #else
 };
+#define PIN_INTERRUPT 255
 #endif
 
 void
@@ -64,7 +67,51 @@ pins_user_init(void)
 		pins_user_set_io(i, pin_values[i].output);
 		pins_user_set_value(i, pin_values[i].pin_dir);
 	}
+    
+//#ifdef BOARD_rfd900a
+//    // Setup Interrupts
+////    pins_user_set_interrupt()
+//   	IT01CF   |=  0x90;
+//    pins_user_set_io(5,PIN_INPUT);
+//    pins_user_set_value(5,PIN_HIGH);
+//    EX1 = 1;
+//#endif
 }
+
+void
+pin_user_change_check()
+{
+//    __pdata uint8_t i = pins_user_get_adc(5);
+//
+//    if (pin_values[5].node_mirror != i) {
+//        pin_values[5].node_mirror = i;
+//        
+//        at_cmd[0] = 'R';
+//        at_cmd[1] = 'T';
+//        at_cmd[2] = 'P';
+//        at_cmd[3] = 'C';
+//        at_cmd[4] = '=';
+//        at_cmd[5] = '4';
+//        at_cmd[6] = ',';
+//        at_cmd[7] = i + '0';
+//        at_cmd[8] = '\0';
+//
+//        if(nodeId == 0)
+//        {
+//            tdm_remote_at(1);
+//        }
+//        else
+//        {
+//            tdm_remote_at(0);
+//        }
+//    }
+}
+
+//bool
+//pins_user_set_interrupt(__pdata uint8_t pin, __pdata uint32_t node)
+//{
+//    return node == pin;
+//}
 
 bool
 pins_user_set_io(__pdata uint8_t pin, bool in_out)

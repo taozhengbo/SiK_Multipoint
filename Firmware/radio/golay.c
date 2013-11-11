@@ -62,16 +62,16 @@ static const __code uint32_t shift_table[12] = {
 static uint16_t 
 golay_syndrome(__data uint32_t codeword)
 {
-	__data uint32_t shift = (1UL<<22);
-	__data uint8_t shiftcount = 11;
-
-	while (codeword >= (1UL<<11)) {
-		while ((shift & codeword) == 0) {
-			shift >>= 1;
-			shiftcount--;
-		}
-		codeword ^= shift_table[shiftcount];
-	}
+//	__data uint32_t shift = (1UL<<22);
+//	__data uint8_t shiftcount = 11;
+//
+//	while (codeword >= (1UL<<11)) {
+//		while ((shift & codeword) == 0) {
+//			shift >>= 1;
+//			shiftcount--;
+//		}
+//		codeword ^= shift_table[shiftcount];
+//	}
 	return codeword;
 }
 
@@ -81,20 +81,20 @@ golay_syndrome(__data uint32_t codeword)
 static void 
 golay_encode24(void)
 {
-	__pdata uint16_t v;
-	__pdata uint32_t codeword;
-
-	v = g3[0] | ((uint16_t)g3[1]&0xF)<<8;
-	codeword = golay23_encode[v];
-	g6[0] = codeword & 0xFF;
-	g6[1] = (codeword >> 8) & 0xFF;
-	g6[2] = (codeword >> 16) & 0xFF;
-
-	v = g3[2] | ((uint16_t)g3[1]&0xF0)<<4;
-	codeword = golay23_encode[v];
-	g6[3] = codeword & 0xFF;
-	g6[4] = (codeword >> 8) & 0xFF;
-	g6[5] = (codeword >> 16) & 0xFF;
+//	__pdata uint16_t v;
+//	__pdata uint32_t codeword;
+//
+//	v = g3[0] | ((uint16_t)g3[1]&0xF)<<8;
+//	codeword = golay23_encode[v];
+//	g6[0] = codeword & 0xFF;
+//	g6[1] = (codeword >> 8) & 0xFF;
+//	g6[2] = (codeword >> 16) & 0xFF;
+//
+//	v = g3[2] | ((uint16_t)g3[1]&0xF0)<<4;
+//	codeword = golay23_encode[v];
+//	g6[3] = codeword & 0xFF;
+//	g6[4] = (codeword >> 8) & 0xFF;
+//	g6[5] = (codeword >> 16) & 0xFF;
 }
 
 // encode n bytes of data into 2n coded bytes. n must be a multiple 3
@@ -119,34 +119,35 @@ golay_encode(__pdata uint8_t n, __xdata uint8_t * __pdata in, __xdata uint8_t * 
 static uint8_t 
 golay_decode24(void)
 {
-	__data uint16_t v, v0;
-	__data uint32_t codeword;
-	__pdata uint8_t errcount = 0;
-
-	codeword = g6[0] | (((uint16_t)g6[1])<<8) | (((uint32_t)(g6[2]&0x7F))<<16);
-	v0 = codeword >> 11;
-	v = golay_syndrome(codeword);
-	codeword ^= golay23_decode[v];
-	v = codeword >> 11;
-	if (v != v0) {
-		errcount++;
-	}
-
-	g3[0] = v & 0xFF;
-	g3[1] = (v >> 8);
-
-	codeword = g6[3] | (((uint16_t)g6[4])<<8) | (((uint32_t)(g6[5]&0x7F))<<16);
-	v0 = codeword >> 11;
-	v = golay_syndrome(codeword);
-	codeword ^= golay23_decode[v];
-	v = codeword >> 11;
-	if (v != v0) {
-		errcount++;
-	}
-
-	g3[1] |= ((v >> 4)&0xF0);
-	g3[2] = v & 0xFF;
-	return errcount;
+//	__data uint16_t v, v0;
+//	__data uint32_t codeword;
+//	__pdata uint8_t errcount = 0;
+//
+//	codeword = g6[0] | (((uint16_t)g6[1])<<8) | (((uint32_t)(g6[2]&0x7F))<<16);
+//	v0 = codeword >> 11;
+//	v = golay_syndrome(codeword);
+//	codeword ^= golay23_decode[v];
+//	v = codeword >> 11;
+//	if (v != v0) {
+//		errcount++;
+//	}
+//
+//	g3[0] = v & 0xFF;
+//	g3[1] = (v >> 8);
+//
+//	codeword = g6[3] | (((uint16_t)g6[4])<<8) | (((uint32_t)(g6[5]&0x7F))<<16);
+//	v0 = codeword >> 11;
+//	v = golay_syndrome(codeword);
+//	codeword ^= golay23_decode[v];
+//	v = codeword >> 11;
+//	if (v != v0) {
+//		errcount++;
+//	}
+//
+//	g3[1] |= ((v >> 4)&0xF0);
+//	g3[2] = v & 0xFF;
+//	return errcount;
+    return 100;
 }
 
 // decode n bytes of coded data into n/2 bytes of original data

@@ -29,6 +29,7 @@
 
 #include "radio.h"
 #include "timer.h"
+#include "pins_user.h"
 
 /// Counter used by delay_msec
 ///
@@ -45,6 +46,7 @@ INTERRUPT(T3_ISR, INTERRUPT_TIMER3)
 
 	// call the AT parser tick
 	at_timer();
+    pin_user_change_check();
 
 	// update the delay counter
 	if (delay_counter > 0)
