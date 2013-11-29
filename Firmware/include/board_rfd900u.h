@@ -65,7 +65,9 @@
 #include <compiler_defs.h>
 #include <Si1020_defs.h>
 
-#define BOARD_ID	  0x44
+// Ensure that the BoardID has the upper most bit set
+// This tells the tool chain we are dealing with a CPU_SI1030 device
+#define BOARD_ID	 0x80 | 0x01
 #define BOARD_NAME	"RFD900U"
 #define CPU_SI1030
 
@@ -100,24 +102,26 @@ SBIT(PIN_ENABLE,   SFR_P0, 3);
 // board-specific hardware config
 #define HW_INIT							\
 	do { \
-		SFRPAGE  = CONFIG_PAGE; \
+		SFRPAGE	 = CONFIG_PAGE; \
 		P3MDOUT |= 0x40;		/* Led Red */ \
-		P3DRV   |= 0x40;		/* Led Red */ \
+		P3DRV	|= 0x40;		/* Led Red */ \
 		SFRPAGE  = LEGACY_PAGE;	\
 		/* Setup Timers */ \
 		TMOD	 = (TMOD & ~0xf0) | 0x20;		/* TMOD: timer 1 in 8-bit autoreload */ \
 		TR1		 = 1;			/* START Timer1 */ \
 		TI0		 = 1;			/* Indicate TX0 ready */ \
+		/* INT0 is the radio interrupt, on P0.7 */	\
+		IT01CF	 = (IT01CF & 0xf) | 0x1;\
 		\
-		P2       = 0xFF;                    /* P2 bug fix for SDCC and Raisonance*/ \
+		P2		 = 0xFF;		/* P2 bug fix for SDCC and Raisonance*/ \
 	} while(0)
 
 // application/board-specific hardware config
 #define HW_INIT_APPLICATION					\
-	do {							\
-		SFRPAGE	 =  CONFIG_PAGE;			\
-		P0DRV	|=    0x04;		/* CTS */	\
-		SFRPAGE	 =  LEGACY_PAGE;			\
+	do {									\
+		SFRPAGE	 = CONFIG_PAGE;				\
+		P0DRV	|= 0x04;		/* CTS */	\
+		SFRPAGE	 = LEGACY_PAGE;				\
 	} while(0)
 
 // Radio Definitions
