@@ -35,6 +35,8 @@
 
 #include "radio.h"
 #include "tdm.h"
+#include "flash_layout.h"
+#include "at.h"
 
 // canary data for ram wrap. It is in at.c as the compiler
 // assigns addresses in alphabetial order and we want this at a low
@@ -455,8 +457,15 @@ at_ampersand(void) __nonbanked
 
 	case 'U':
 		if (!strcmp(at_cmd + 4, "PDATE")) {
-			// force a flash error
-			volatile char x = *(__code volatile char *)0xfc00;
+			// Erase Flash signature forcing it into reprogram mode next reset
+			FLKEY = 0xa5;
+			FLKEY = 0xf1;
+			PSCTL = 0x03;				// set PSWE and PSEE
+			*(uint8_t __xdata *)FLASH_SIGNATURE_BYTES = 0xff;	// do the page erase
+			PSCTL = 0x00;				// disable PSWE/PSEE
+			
+			// Reset the device using sofware reset
+			RSTSRC |= 0x10;
 			for (;;)
 				;
 		}
@@ -552,7 +561,7 @@ at_p (void) __nonbanked
 static void
 at_plus(void) __nonbanked
 {
-#ifdef BOARD_rfd900a
+#if defined BOARD_rfd900a || defined INCLUDE_ENCRYPTION
 	__pdata uint8_t		creg;
 	__pdata uint32_t	val;
 
@@ -562,6 +571,7 @@ at_plus(void) __nonbanked
 
 	switch (at_cmd[3])
 	{
+#ifdef BOARD_rfd900a
 	case 'P': // AT+P=x set power level pwm to x immediately
 		if (at_cmd[4] != '=')
 		{
@@ -600,31 +610,32 @@ at_plus(void) __nonbanked
 			at_error();
 		}
 		return;
-	case 'E': // AT+E= Encyrption key for the radio
-#ifdef INCLUDE_ENCRYPTION
-			__pdata uint8_t		i=0;
-			__pdata uint8_t		val = (uint8_t)(param_get(PARAM_ENCRYPTION)/8);
-			
-			if(at_cmd[4] != '=' || val == 0)
-			{
-				at_error();
-				return;
-			}
-			printf("%d,%f",i,encryption_key);
-			for(i=0; i<val; i++)
-			{
-				// The hex number starts on the 5th char
-				// For each 8bits we need to read 2 chars
-				EncryptionKey[i] = read_hex_byte(at_cmd+5+(i*2));
-			}
-			
-			if(param_encryptkey_set(encryption_key))
-			{
-				at_ok();
-				return;
-			}
-#endif // INCLUDE_ENCRYPTION
+#endif // BOARD_rfd900a
+//#ifdef INCLUDE_ENCRYPTION
+//	case 'E': // AT+E= Encyrption key for the radio
+//			__pdata uint8_t		i=0;
+//			__pdata uint8_t		val = (uint8_t)(param_get(PARAM_ENCRYPTION)/8);
+//			
+//			if(at_cmd[4] != '=' || val == 0)
+//			{
+//				at_error();
+//				return;
+//			}
+//			printf("%d,%f",i,encryption_key);
+//			for(i=0; i<val; i++)
+//			{
+//				// The hex number starts on the 5th char
+//				// For each 8bits we need to read 2 chars
+//				EncryptionKey[i] = read_hex_byte(at_cmd+5+(i*2));
+//			}
+//			
+//			if(param_encryptkey_set(encryption_key))
+//			{
+//				at_ok();
+//				return;
+//			}
+//#endif // INCLUDE_ENCRYPTION
 	}
-#endif //BOARD_rfd900a
+#endif // BOARD_rfd900a || INCLUDE_ENCRYPTION
 	at_error();
 }
