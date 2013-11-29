@@ -98,7 +98,6 @@ extern bool feature_rtscts;
 ///
 extern void	panic(char *fmt, ...) __nonbanked;
 extern void Receiver_ISR_code(void);
-extern void Reciver_ISR_timer(void);
 /// Alternate vprintf implementation
 ///
 extern void	vprintfl(const char * fmt, va_list ap) __reentrant __nonbanked;
