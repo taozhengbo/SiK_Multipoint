@@ -1,3 +1,9 @@
+# WARNING
+This repository has been merged into the main branh found here -> https://github.com/RFDesign/SiK/tree/SiK_Multipoint
+
+As such this is here for historical purposes only and will not be updated anymore.
+
+
 # SiK - Firmware for SiLabs Si1000 ISM radios
 
 For user documentation please see this site:
